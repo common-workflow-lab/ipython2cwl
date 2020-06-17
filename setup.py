@@ -47,8 +47,11 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     entry_points={
-        'console_scripts': ['jupyter-cwl=ipython2cwl.ipython2cwl:main'],
+        'console_scripts': ['jupyter-jn2cwl=ipython2cwl.ipython2cwl:main'],
     },
-    install_requires=[],
+    install_requires=[
+        'nbformat>=5.0.6',
+
+    ],
     test_suite='tests',
 )
