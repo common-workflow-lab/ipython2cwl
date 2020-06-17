@@ -42,4 +42,4 @@ class TestRequirementsManager(TestCase):
             check=True,
             env={},
         )
-        shutil.rmtree(venv_name)
+        shutil.rmtree(os.sep.join([self.here, venv_name]))
