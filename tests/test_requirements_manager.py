@@ -3,7 +3,7 @@ import sys
 import uuid
 from unittest import TestCase
 
-from requirements_manager import RequirementsManager
+from ipython2cwl.requirements_manager import RequirementsManager
 import subprocess
 import os
 
