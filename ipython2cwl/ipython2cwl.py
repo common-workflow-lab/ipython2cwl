@@ -1,4 +1,3 @@
-
 from pip._internal.operations import freeze
 import argparse
 import os
