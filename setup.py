@@ -51,6 +51,7 @@ setup(
     },
     install_requires=[
         'nbformat>=5.0.6',
+        'astor>=0.8.1',
 
     ],
     test_suite='tests',
