@@ -1,11 +1,12 @@
 import os
+from pathlib import Path
 from typing import List, Dict
 
 import ast
 import astor
 from collections import namedtuple
 
-from iotypes import CWLFileInput
+from .iotypes import CWLFileInput
 from . import iotypes
 
 
@@ -76,7 +77,6 @@ class AnnotatedIPython2CWLToolConverter:
         :return: The cwl description of the corresponding tool
         """
         variables = self._get_input_from_code(self._code)
-        self._wrap_script_to_method(self._code, variables)
         inputs = [v for v in variables if v.typeof.__name__ in iotypes.inputs]
         outputs = [v for v in variables if v.typeof.__name__ in iotypes.outputs]
 
@@ -96,3 +96,12 @@ class AnnotatedIPython2CWLToolConverter:
             'outputs': list(outputs),
         }
         return cwl_tool
+
+    def compile(self, filename: Path):
+        """
+        That method generates a tar file which includes the following files:
+        main.py - the python script
+        tool.cwl - the cwl description file
+        :return:
+        """
+        raise NotImplementedError('')
