@@ -60,3 +60,36 @@ class TestCWLTool(TestCase):
             {'notebookTool', 'tool.cwl', 'Dockerfile', 'requirements.txt', 'setup.py'},
             set(os.listdir(extracted_dir))
         )
+
+    def test_AnnotatedIPython2CWLToolConverter_optional_arguments(self):
+        annotated_python_script = os.linesep.join([
+            "import csv",
+            "input_filename: Optional[CWLFilePathInput] = None",
+            "if input_filename is None:",
+            "\tinput_filename = 'data.csv'",
+            "with open(input_filename) as f:",
+            "\tcsv_reader = csv.reader(f)",
+            "\tdata = [line for line in csv_reader]",
+            "print(data)"
+        ])
+        cwl_tool = AnnotatedIPython2CWLToolConverter(annotated_python_script).cwl_command_line_tool()
+        self.assertDictEqual(
+            {
+                'cwlVersion': "v1.1",
+                'class': 'CommandLineTool',
+                'baseCommand': 'notebookTool',
+                'hints': {
+                    'DockerRequirement': {'dockerImageId': 'jn2cwl:latest'}
+                },
+                'inputs': {
+                    'input_filename': {
+                        'type': 'File?',
+                        'inputBinding': {
+                            'prefix': '--input_filename'
+                        }
+                    }
+                },
+                'outputs': [],
+            },
+            cwl_tool
+        )

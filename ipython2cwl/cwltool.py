@@ -28,8 +28,27 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
 
     def visit_AnnAssign(self, node):
         try:
-            if node.annotation.id == CWLFilePathInput.__name__:
-                self.extracted_nodes.append(node)
+            if isinstance(node.annotation, ast.Name) and node.annotation.id == CWLFilePathInput.__name__:
+                self.extracted_nodes.append((
+                    node,
+                    'File',
+                    'click.Path(exists=True, file_okay=True, dir_okay=False, writable=False, readable=True)',
+                    True,
+                    True,
+                    False,
+                ))
+                return None
+            elif isinstance(node.annotation, ast.Subscript) \
+                    and node.annotation.value.id == "Optional" \
+                    and node.annotation.slice.value.id == CWLFilePathInput.__name__:
+                self.extracted_nodes.append((
+                    node,
+                    'File?',
+                    'click.Path(exists=True, file_okay=True, dir_okay=False, writable=False, readable=True)',
+                    False,
+                    True,
+                    False,
+                ))
                 return None
         except AttributeError:
             pass
@@ -44,7 +63,10 @@ class AnnotatedIPython2CWLToolConverter:
 
     _code: str
 
-    _VariableNameAnnotationPair = namedtuple('VariableNameTypePair', ['name', 'typeof'])
+    _VariableNameTypePair = namedtuple(
+        'VariableNameTypePair',
+        ['name', 'cwl_typeof', 'click_typeof', 'required', 'is_input', 'is_output']
+    )
 
     """The annotated python code to convert."""
 
@@ -52,15 +74,17 @@ class AnnotatedIPython2CWLToolConverter:
         self._code = annotated_ipython_code
         extractor = AnnotatedVariablesExtractor()
         self._tree = ast.fix_missing_locations(extractor.visit(ast.parse(self._code)))
-        self._variables = [self._VariableNameAnnotationPair(node.target.id, CWLFilePathInput)
-                           for node in extractor.extracted_nodes]
+        self._variables = [
+            self._VariableNameTypePair(node.target.id, cwl_type, click_type, required, is_input, is_output)
+            for node, cwl_type, click_type, required, is_input, is_output in extractor.extracted_nodes
+        ]
 
     @classmethod
     def _wrap_script_to_method(cls, tree, variables) -> str:
         main_function = ast.parse(os.linesep.join([
             'import click',
             '@click.command()',
-            *[f'@click.option("--{variable.name}", type={variable.typeof.to_click_method()}, required=True)'
+            *[f'@click.option("--{variable.name}", type={variable.click_typeof}, required={variable.required})'
               for variable in variables],
             f"def main({','.join([variable.name for variable in variables])}):",
             "\tpass",
@@ -72,11 +96,11 @@ class AnnotatedIPython2CWLToolConverter:
 
     def cwl_command_line_tool(self, docker_image_id: str = 'jn2cwl:latest') -> Dict:
         """
-        Creates the descrption of the CWL Command Line Tool.
+        Creates the description of the CWL Command Line Tool.
         :return: The cwl description of the corresponding tool
         """
-        inputs = [v for v in self._variables if v.typeof.__name__ in iotypes.inputs]
-        outputs = [v for v in self._variables if v.typeof.__name__ in iotypes.outputs]
+        inputs = [v for v in self._variables if v.is_input]
+        outputs = [v for v in self._variables if v.is_output]
 
         cwl_tool = {
             'cwlVersion': "v1.1",
@@ -87,7 +111,7 @@ class AnnotatedIPython2CWLToolConverter:
             },
             'inputs': {
                 input_var.name: {
-                    'type': input_var.typeof.to_cwl(),
+                    'type': input_var.cwl_typeof,
                     'inputBinding': {
                         'prefix': f'--{input_var.name}'
                     }
