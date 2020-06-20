@@ -1,10 +1,8 @@
-import shutil
-import sys
-import uuid
-from unittest import TestCase
-from ipython2cwl.requirements_manager import RequirementsManager
-import subprocess
 import os
+import shutil
+from unittest import TestCase
+
+from ipython2cwl.requirements_manager import RequirementsManager
 
 
 class TestRequirementsManager(TestCase):

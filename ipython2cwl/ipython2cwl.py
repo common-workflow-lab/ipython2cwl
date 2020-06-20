@@ -1,9 +1,10 @@
-from pip._internal.operations import freeze
 import argparse
 import os
-import nbformat
-from typing import List, Optional
 from pathlib import Path
+from typing import List, Optional
+
+import nbformat
+from pip._internal.operations import freeze
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.dockerfile'])) as f:
     DOCKERFILE_TEMPLATE = f.read()

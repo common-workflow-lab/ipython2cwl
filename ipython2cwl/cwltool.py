@@ -1,18 +1,18 @@
-import os
-from pathlib import Path
-from typing import List, Dict
-
 import ast
-import astor
-from collections import namedtuple
-import tarfile
-import shutil
-import tempfile
-import yaml
+import os
 import platform
+import shutil
+import tarfile
+import tempfile
+from collections import namedtuple
+from pathlib import Path
+from typing import Dict
 
-from .iotypes import CWLFilePathInput
+import astor
+import yaml
+
 from . import iotypes
+from .iotypes import CWLFilePathInput
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.dockerfile'])) as f:
