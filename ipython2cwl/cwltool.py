@@ -11,7 +11,7 @@ from typing import Dict
 import astor
 import yaml
 
-from .iotypes import CWLFilePathInput, CWLBooleanInput
+from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.dockerfile'])) as f:
@@ -41,7 +41,17 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
                 'boolean',
                 'click.BOOL',
                 input_flag,
-            )
+            ),
+            CWLIntInput.__name__: (
+                'int',
+                'click.INT',
+                input_flag,
+            ),
+            CWLStringInput.__name__: (
+                'string',
+                'click.STRING',
+                input_flag,
+            ),
         }
         """Mapping types. First tuple required, second optional"""
         try:

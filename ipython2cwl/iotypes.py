@@ -7,3 +7,11 @@ class CWLFilePathInput(typing.TextIO):
 
 class CWLBooleanInput:
     pass
+
+
+class CWLStringInput:
+    pass
+
+
+class CWLIntInput:
+    pass

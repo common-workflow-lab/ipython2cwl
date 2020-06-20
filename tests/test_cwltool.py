@@ -7,15 +7,21 @@ import tarfile
 
 
 class TestCWLTool(TestCase):
+    maxDiff = None
 
     def test_AnnotatedIPython2CWLToolConverter_cwl_command_line_tool(self):
         annotated_python_script = os.linesep.join([
             "import csv",
             "input_filename: CWLFilePathInput = 'data.csv'",
             "flag: CWLBooleanInput = true",
+            "num: CWLIntInput = 1",
+            "msg: CWLStringInput = 'hello world'",
             "with open(input_filename) as f:",
             "\tcsv_reader = csv.reader(f)",
             "\tdata = [line for line in reader]",
+            "print(msg)",
+            "print(num)",
+            "print(flag)",
         ])
 
         cwl_tool = AnnotatedIPython2CWLToolConverter(annotated_python_script).cwl_command_line_tool()
@@ -39,7 +45,19 @@ class TestCWLTool(TestCase):
                         'inputBinding': {
                             'prefix': '--flag'
                         }
-                    }
+                    },
+                    'num': {
+                        'type': 'int',
+                        'inputBinding': {
+                            'prefix': '--num'
+                        }
+                    },
+                    'msg': {
+                        'type': 'string',
+                        'inputBinding': {
+                            'prefix': '--msg'
+                        }
+                    },
                 },
                 'outputs': [],
             },
