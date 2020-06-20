@@ -23,6 +23,9 @@ class TestCWLTool(TestCase):
                 'cwlVersion': "v1.1",
                 'class': 'CommandLineTool',
                 'baseCommand': 'notebookTool',
+                'hints': {
+                    'DockerRequirement': {'dockerImageId': 'jn2cwl:latest'}
+                },
                 'inputs': {
                     'input_filename': {
                         'type': 'File',
@@ -39,10 +42,11 @@ class TestCWLTool(TestCase):
     def test_AnnotatedIPython2CWLToolConverter_compile(self):
         annotated_python_script = os.linesep.join([
             "import csv",
-            "input_filename: CWLFileInput = 'data.csv'",
+            "input_filename: CWLFilePathInput = 'data.csv'",
             "with open(input_filename) as f:",
             "\tcsv_reader = csv.reader(f)",
-            "\tdata = [line for line in reader]",
+            "\tdata = [line for line in csv_reader]",
+            "print(data)"
         ])
         compiled_tar_file = os.path.join(tempfile.mkdtemp(), 'file.tar')
         extracted_dir = tempfile.mkdtemp()

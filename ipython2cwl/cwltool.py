@@ -88,7 +88,7 @@ class AnnotatedIPython2CWLToolConverter:
         main_function.body[1].body = tree.body
         return astor.to_source(main_function)
 
-    def cwl_command_line_tool(self) -> Dict:
+    def cwl_command_line_tool(self, docker_image_id: str = 'jn2cwl:latest') -> Dict:
         """
         Creates the descrption of the CWL Command Line Tool.
         :return: The cwl description of the corresponding tool
@@ -100,6 +100,9 @@ class AnnotatedIPython2CWLToolConverter:
             'cwlVersion': "v1.1",
             'class': 'CommandLineTool',
             'baseCommand': 'notebookTool',
+            'hints': {
+                'DockerRequirement': {'dockerImageId': docker_image_id}
+            },
             'inputs': {
                 input_var.name: {
                     'type': input_var.typeof.to_cwl(),

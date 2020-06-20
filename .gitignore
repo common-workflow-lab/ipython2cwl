@@ -241,3 +241,4 @@ cython_debug/
 /tests/output/
 /tests/jn/output/
 /external_examples/
+/tests/jn/output/
