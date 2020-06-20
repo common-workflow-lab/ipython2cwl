@@ -21,24 +21,6 @@ with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.set
     SETUP_TEMPLATE = f.read()
 
 
-class CWLToolBuilder(object):
-    """CWLToolBuilder is a singleton class which builds a CWL CommandLineTool
-    by providing decorators as interface.
-    """
-
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if CWLToolBuilder._instance is None:
-            CWLToolBuilder._instance = object.__new__(cls)
-        CWLToolBuilder._instance.cwl_inputs = []
-        return CWLToolBuilder._instance
-
-    def register_input(self, func):
-        func()
-        return func
-
-
 # TODO: does not support recursion if main function exists
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
