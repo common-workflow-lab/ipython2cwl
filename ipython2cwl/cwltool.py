@@ -11,8 +11,7 @@ from typing import Dict
 import astor
 import yaml
 
-from . import iotypes
-from .iotypes import CWLFilePathInput
+from .iotypes import CWLFilePathInput, CWLBooleanInput
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.dockerfile'])) as f:
@@ -24,31 +23,41 @@ with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.set
 # TODO: does not support recursion if main function exists
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
-    extracted_nodes = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.extracted_nodes = []
 
     def visit_AnnAssign(self, node):
+        input_flag = 0
+        output_flag = 1
+        type_mapper = {
+            CWLFilePathInput.__name__: (
+                'File',
+                'click.Path(exists=True, file_okay=True, dir_okay=False, writable=False, readable=True)',
+                input_flag
+            ),
+            CWLBooleanInput.__name__: (
+                'boolean',
+                'click.BOOL',
+                input_flag,
+            )
+        }
+        """Mapping types. First tuple required, second optional"""
         try:
-            if isinstance(node.annotation, ast.Name) and node.annotation.id == CWLFilePathInput.__name__:
-                self.extracted_nodes.append((
-                    node,
-                    'File',
-                    'click.Path(exists=True, file_okay=True, dir_okay=False, writable=False, readable=True)',
-                    True,
-                    True,
-                    False,
-                ))
+            if isinstance(node.annotation, ast.Name) and node.annotation.id in type_mapper:
+                mapper = type_mapper[node.annotation.id]
+                self.extracted_nodes.append(
+                    (node, mapper[0], mapper[1], True, mapper[2] == input_flag, mapper[2] == output_flag)
+                )
                 return None
             elif isinstance(node.annotation, ast.Subscript) \
                     and node.annotation.value.id == "Optional" \
-                    and node.annotation.slice.value.id == CWLFilePathInput.__name__:
-                self.extracted_nodes.append((
-                    node,
-                    'File?',
-                    'click.Path(exists=True, file_okay=True, dir_okay=False, writable=False, readable=True)',
-                    False,
-                    True,
-                    False,
-                ))
+                    and node.annotation.slice.value.id in type_mapper:
+                mapper = type_mapper[node.annotation.slice.value.id]
+                self.extracted_nodes.append(
+                    (node, mapper[0] + '?', mapper[1], False, mapper[2] == input_flag, mapper[2] == output_flag)
+                )
                 return None
         except AttributeError:
             pass

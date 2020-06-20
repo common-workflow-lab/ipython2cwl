@@ -242,3 +242,4 @@ cython_debug/
 /tests/jn/output/
 /external_examples/
 /tests/jn/output/
+tmp.py

@@ -12,6 +12,7 @@ class TestCWLTool(TestCase):
         annotated_python_script = os.linesep.join([
             "import csv",
             "input_filename: CWLFilePathInput = 'data.csv'",
+            "flag: CWLBooleanInput = true",
             "with open(input_filename) as f:",
             "\tcsv_reader = csv.reader(f)",
             "\tdata = [line for line in reader]",
@@ -31,6 +32,12 @@ class TestCWLTool(TestCase):
                         'type': 'File',
                         'inputBinding': {
                             'prefix': '--input_filename'
+                        }
+                    },
+                    'flag': {
+                        'type': 'boolean',
+                        'inputBinding': {
+                            'prefix': '--flag'
                         }
                     }
                 },
