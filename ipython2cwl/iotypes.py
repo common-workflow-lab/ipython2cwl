@@ -13,15 +13,15 @@ class CWLTypeAdapter:
         raise NotImplementedError()
 
 
-class CWLFileInput(typing.TextIO, ClickTypeAdapter):
+class CWLFilePathInput(typing.TextIO, ClickTypeAdapter):
     @classmethod
     def to_click_method(cls) -> str:
-        return 'click.File('r')'
+        return 'click.Path(exists=True, file_okay=True, dir_okay=False, writable=False, readable=True)'
 
     @classmethod
     def to_cwl(cls) -> str:
         return 'File'
 
 
-inputs = {CWLFileInput.__name__}
+inputs = {CWLFilePathInput.__name__}
 outputs = set()

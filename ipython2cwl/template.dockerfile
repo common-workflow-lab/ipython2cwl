@@ -1,3 +1,3 @@
-FROM python:{python_version}
+FROM {python_version}
 COPY . /app
-RUN pip install -r /app/requirements.txt
+RUN cd /app && pip install -r requirements.txt && python setup.py install

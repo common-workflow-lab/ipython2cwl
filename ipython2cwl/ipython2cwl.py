@@ -10,6 +10,7 @@ with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.doc
 
 
 def directory_type(directory_argument: str):
+    """Function to be used as a directory type for argparse argument."""
     directory = Path(directory_argument)
     if not directory.is_dir():
         raise RuntimeError('directory does not exists')
