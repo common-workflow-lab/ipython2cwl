@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
-from iotypes import CWLStringInput
+from ipython2cwl.iotypes import CWLStringInput
 from ipython2cwl.cwltool import AnnotatedIPython2CWLToolConverter
 import os
 import tempfile
