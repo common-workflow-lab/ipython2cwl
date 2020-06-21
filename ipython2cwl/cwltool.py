@@ -39,17 +39,17 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             ),
             CWLBooleanInput.__name__: (
                 'boolean',
-                'click.BOOL',
+                'lambda flag: flag.upper() == "TRUE"',
                 input_flag,
             ),
             CWLIntInput.__name__: (
                 'int',
-                'click.INT',
+                'int',
                 input_flag,
             ),
             CWLStringInput.__name__: (
                 'string',
-                'click.STRING',
+                'str',
                 input_flag,
             ),
         }
