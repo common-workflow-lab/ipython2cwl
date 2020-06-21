@@ -115,14 +115,16 @@ class AnnotatedIPython2CWLToolConverter:
                 "import argparse",
                 'import pathlib',
                 "parser = argparse.ArgumentParser()",
-                *[f'parser.add_argument("--{variable.name}", type={variable.argparse_typeof}, required={variable.required})'
+                *[f'parser.add_argument("--{variable.name}", '
+                  f'type={variable.argparse_typeof}, '
+                  f'required={variable.required})'
                   for variable in variables],
                 "args = parser.parse_args()",
                 f"main({','.join([f'{v.name}=args.{v.name}' for v in variables])})"
             ]],
         ])
         main_function = ast.parse(main_template_code)
-        [node for node in main_function.body if isinstance(node, ast.FunctionDef) and node.name == 'main'][0]\
+        [node for node in main_function.body if isinstance(node, ast.FunctionDef) and node.name == 'main'][0] \
             .body = tree.body
         return astor.to_source(main_function)
 
