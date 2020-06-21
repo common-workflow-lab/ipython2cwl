@@ -1,5 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
+
+from iotypes import CWLStringInput
 from ipython2cwl.cwltool import AnnotatedIPython2CWLToolConverter
 import os
 import tempfile
@@ -118,3 +120,52 @@ class TestCWLTool(TestCase):
             },
             cwl_tool
         )
+
+    def test_AnnotatedIPython2CWLToolConverter_list_arguments(self):
+        annotated_python_script = os.linesep.join([
+            "import csv",
+            "input_filename: List[CWLFilePathInput] = ['data1.csv', 'data2.csv']",
+            "for fn in input_filename:",
+            "\twith open(input_filename) as f:",
+            "\t\tcsv_reader = csv.reader(f)",
+            "\t\tdata = [line for line in csv_reader]",
+            "\tprint(data)"
+        ])
+        cwl_tool = AnnotatedIPython2CWLToolConverter(annotated_python_script).cwl_command_line_tool()
+        self.assertDictEqual(
+            {
+                'cwlVersion': "v1.1",
+                'class': 'CommandLineTool',
+                'baseCommand': 'notebookTool',
+                'hints': {
+                    'DockerRequirement': {'dockerImageId': 'jn2cwl:latest'}
+                },
+                'inputs': {
+                    'input_filename': {
+                        'type': 'File[]',
+                        'inputBinding': {
+                            'prefix': '--input_filename'
+                        }
+                    }
+                },
+                'outputs': [],
+            },
+            cwl_tool
+        )
+
+    def test_test_AnnotatedIPython2CWLToolConverter_wrap_script_to_method(self):
+        printed_message = ''
+        annotated_python_script = os.linesep.join([
+            'global printed_message',
+            f"msg: {CWLStringInput.__name__} = 'original'",
+            "print('message:', msg)",
+            "printed_message = msg"
+        ])
+        exec(annotated_python_script)
+        self.assertEqual('original', globals()['printed_message'])
+        converter = AnnotatedIPython2CWLToolConverter(annotated_python_script)
+        new_script = converter._wrap_script_to_method(converter._tree, converter._variables)
+        print('\n' + new_script, '\n')
+        exec(new_script)
+        locals()['main']('new message')
+        self.assertEqual('new message', globals()['printed_message'])

@@ -34,7 +34,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
         type_mapper = {
             CWLFilePathInput.__name__: (
                 'File',
-                'click.Path(exists=True, file_okay=True, dir_okay=False, writable=False, readable=True)',
+                'pathlib.Path',
                 input_flag
             ),
             CWLBooleanInput.__name__: (
@@ -61,14 +61,21 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
                     (node, mapper[0], mapper[1], True, mapper[2] == input_flag, mapper[2] == output_flag)
                 )
                 return None
-            elif isinstance(node.annotation, ast.Subscript) \
-                    and node.annotation.value.id == "Optional" \
-                    and node.annotation.slice.value.id in type_mapper:
-                mapper = type_mapper[node.annotation.slice.value.id]
-                self.extracted_nodes.append(
-                    (node, mapper[0] + '?', mapper[1], False, mapper[2] == input_flag, mapper[2] == output_flag)
-                )
-                return None
+            elif isinstance(node.annotation, ast.Subscript):
+                if node.annotation.value.id == "Optional" \
+                        and node.annotation.slice.value.id in type_mapper:
+                    mapper = type_mapper[node.annotation.slice.value.id]
+                    self.extracted_nodes.append(
+                        (node, mapper[0] + '?', mapper[1], False, mapper[2] == input_flag, mapper[2] == output_flag)
+                    )
+                    return None
+                elif node.annotation.value.id == "List" \
+                        and node.annotation.slice.value.id in type_mapper:
+                    mapper = type_mapper[node.annotation.slice.value.id]
+                    self.extracted_nodes.append(
+                        (node, mapper[0] + '[]', mapper[1], True, mapper[2] == input_flag, mapper[2] == output_flag)
+                    )
+                    return None
         except AttributeError:
             pass
         return node
@@ -84,7 +91,7 @@ class AnnotatedIPython2CWLToolConverter:
 
     _VariableNameTypePair = namedtuple(
         'VariableNameTypePair',
-        ['name', 'cwl_typeof', 'click_typeof', 'required', 'is_input', 'is_output']
+        ['name', 'cwl_typeof', 'argparse_typeof', 'required', 'is_input', 'is_output']
     )
 
     """The annotated python code to convert."""
@@ -100,17 +107,23 @@ class AnnotatedIPython2CWLToolConverter:
 
     @classmethod
     def _wrap_script_to_method(cls, tree, variables) -> str:
-        main_function = ast.parse(os.linesep.join([
-            'import click',
-            '@click.command()',
-            *[f'@click.option("--{variable.name}", type={variable.click_typeof}, required={variable.required})'
-              for variable in variables],
+        main_template_code = os.linesep.join([
             f"def main({','.join([variable.name for variable in variables])}):",
             "\tpass",
             "if __name__ == '__main__':",
-            "\tmain()"
-        ]))
-        main_function.body[1].body = tree.body
+            *['\t' + line for line in [
+                "import argparse",
+                'import pathlib',
+                "parser = argparse.ArgumentParser()",
+                *[f'parser.add_argument("--{variable.name}", type={variable.argparse_typeof}, required={variable.required})'
+                  for variable in variables],
+                "args = parser.parse_args()",
+                f"main({','.join([f'{v.name}=args.{v.name}' for v in variables])})"
+            ]],
+        ])
+        main_function = ast.parse(main_template_code)
+        [node for node in main_function.body if isinstance(node, ast.FunctionDef) and node.name == 'main'][0]\
+            .body = tree.body
         return astor.to_source(main_function)
 
     def cwl_command_line_tool(self, docker_image_id: str = 'jn2cwl:latest') -> Dict:
