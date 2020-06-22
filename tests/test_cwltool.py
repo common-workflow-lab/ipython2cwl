@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
-from ipython2cwl.iotypes import CWLStringInput
+from ipython2cwl.iotypes import CWLStringInput, CWLFilePathOutput
 from ipython2cwl.cwltool import AnnotatedIPython2CWLToolConverter
 import os
 import tempfile
@@ -61,7 +61,7 @@ class TestCWLTool(TestCase):
                         }
                     },
                 },
-                'outputs': [],
+                'outputs': {},
             },
             cwl_tool
         )
@@ -116,7 +116,7 @@ class TestCWLTool(TestCase):
                         }
                     }
                 },
-                'outputs': [],
+                'outputs': {},
             },
             cwl_tool
         )
@@ -148,12 +148,12 @@ class TestCWLTool(TestCase):
                         }
                     }
                 },
-                'outputs': [],
+                'outputs': {},
             },
             cwl_tool
         )
 
-    def test_test_AnnotatedIPython2CWLToolConverter_wrap_script_to_method(self):
+    def test_AnnotatedIPython2CWLToolConverter_wrap_script_to_method(self):
         printed_message = ''
         annotated_python_script = os.linesep.join([
             'global printed_message',
@@ -169,3 +169,43 @@ class TestCWLTool(TestCase):
         exec(new_script)
         locals()['main']('new message')
         self.assertEqual('new message', globals()['printed_message'])
+
+    def test_AnnotatedIPython2CWLToolConverter_output_file_annotation(self):
+        import tempfile
+        root_dir = tempfile.mkdtemp()
+        output_file_path = os.path.join(root_dir, "file.txt")
+        annotated_python_script = os.linesep.join([
+            'x = "hello world"',
+            f'output_path: {CWLFilePathOutput.__name__} = "{output_file_path}"',
+            "with open(output_path, 'w') as f:",
+            "\tf.write(x)"
+        ])
+        converter = AnnotatedIPython2CWLToolConverter(annotated_python_script)
+        new_script = converter._wrap_script_to_method(converter._tree, converter._variables)
+        print('\n' + new_script, '\n')
+        exec(new_script)
+        locals()['main']()
+        with open(output_file_path) as f:
+            self.assertEqual("hello world", f.read())
+        os.remove(output_file_path)
+        tool = converter.cwl_command_line_tool()
+        self.assertDictEqual(
+            {
+                'cwlVersion': "v1.1",
+                'class': 'CommandLineTool',
+                'baseCommand': 'notebookTool',
+                'hints': {
+                    'DockerRequirement': {'dockerImageId': 'jn2cwl:latest'}
+                },
+                'inputs': {},
+                'outputs': {
+                    'output_path': {
+                        'type': 'File',
+                        'outputBinding': {
+                            'glob': output_file_path
+                        }
+                    }
+                },
+            },
+            tool
+        )

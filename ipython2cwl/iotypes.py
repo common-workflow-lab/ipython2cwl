@@ -1,7 +1,5 @@
-import typing
 
-
-class CWLFilePathInput(typing.TextIO):
+class CWLFilePathInput:
     pass
 
 
@@ -14,4 +12,8 @@ class CWLStringInput:
 
 
 class CWLIntInput:
+    pass
+
+
+class CWLFilePathOutput:
     pass

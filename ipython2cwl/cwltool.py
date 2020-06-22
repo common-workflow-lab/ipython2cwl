@@ -11,7 +11,7 @@ from typing import Dict
 import astor
 import yaml
 
-from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput
+from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.dockerfile'])) as f:
@@ -29,53 +29,55 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
         self.extracted_nodes = []
 
     def visit_AnnAssign(self, node):
-        input_flag = 0
-        output_flag = 1
-        type_mapper = {
+        input_type_mapper = {
             CWLFilePathInput.__name__: (
                 'File',
                 'pathlib.Path',
-                input_flag
             ),
             CWLBooleanInput.__name__: (
                 'boolean',
                 'lambda flag: flag.upper() == "TRUE"',
-                input_flag,
             ),
             CWLIntInput.__name__: (
                 'int',
                 'int',
-                input_flag,
             ),
             CWLStringInput.__name__: (
                 'string',
                 'str',
-                input_flag,
             ),
+        }
+        output_type_mapper = {
+            CWLFilePathOutput.__name__
         }
         """Mapping types. First tuple required, second optional"""
         try:
-            if isinstance(node.annotation, ast.Name) and node.annotation.id in type_mapper:
-                mapper = type_mapper[node.annotation.id]
+            if isinstance(node.annotation, ast.Name) and node.annotation.id in input_type_mapper:
+                mapper = input_type_mapper[node.annotation.id]
                 self.extracted_nodes.append(
-                    (node, mapper[0], mapper[1], True, mapper[2] == input_flag, mapper[2] == output_flag)
+                    (node, mapper[0], mapper[1], True, True, False)
                 )
                 return None
             elif isinstance(node.annotation, ast.Subscript):
                 if node.annotation.value.id == "Optional" \
-                        and node.annotation.slice.value.id in type_mapper:
-                    mapper = type_mapper[node.annotation.slice.value.id]
+                        and node.annotation.slice.value.id in input_type_mapper:
+                    mapper = input_type_mapper[node.annotation.slice.value.id]
                     self.extracted_nodes.append(
-                        (node, mapper[0] + '?', mapper[1], False, mapper[2] == input_flag, mapper[2] == output_flag)
+                        (node, mapper[0] + '?', mapper[1], False, True, False)
                     )
                     return None
                 elif node.annotation.value.id == "List" \
-                        and node.annotation.slice.value.id in type_mapper:
-                    mapper = type_mapper[node.annotation.slice.value.id]
+                        and node.annotation.slice.value.id in input_type_mapper:
+                    mapper = input_type_mapper[node.annotation.slice.value.id]
                     self.extracted_nodes.append(
-                        (node, mapper[0] + '[]', mapper[1], True, mapper[2] == input_flag, mapper[2] == output_flag)
+                        (node, mapper[0] + '[]', mapper[1], True, True, False)
                     )
                     return None
+            elif isinstance(node.annotation, ast.Name) and node.annotation.id in output_type_mapper:
+                self.extracted_nodes.append(
+                    (node, None, None, None, False, True)
+                )
+                return node
         except AttributeError:
             pass
         return node
@@ -91,7 +93,7 @@ class AnnotatedIPython2CWLToolConverter:
 
     _VariableNameTypePair = namedtuple(
         'VariableNameTypePair',
-        ['name', 'cwl_typeof', 'argparse_typeof', 'required', 'is_input', 'is_output']
+        ['name', 'cwl_typeof', 'argparse_typeof', 'required', 'is_input', 'is_output', 'value']
     )
 
     """The annotated python code to convert."""
@@ -100,15 +102,23 @@ class AnnotatedIPython2CWLToolConverter:
         self._code = annotated_ipython_code
         extractor = AnnotatedVariablesExtractor()
         self._tree = ast.fix_missing_locations(extractor.visit(ast.parse(self._code)))
-        self._variables = [
-            self._VariableNameTypePair(node.target.id, cwl_type, click_type, required, is_input, is_output)
-            for node, cwl_type, click_type, required, is_input, is_output in extractor.extracted_nodes
-        ]
+        self._variables = []
+        for node, cwl_type, click_type, required, is_input, is_output in extractor.extracted_nodes:
+            if is_input:
+                self._variables.append(
+                    self._VariableNameTypePair(node.target.id, cwl_type, click_type, required, is_input, is_output,
+                                               None)
+                )
+            if is_output:
+                self._variables.append(
+                    self._VariableNameTypePair(node.target.id, cwl_type, click_type, required, is_input, is_output,
+                                               node.value.s)
+                )
 
     @classmethod
     def _wrap_script_to_method(cls, tree, variables) -> str:
         main_template_code = os.linesep.join([
-            f"def main({','.join([variable.name for variable in variables])}):",
+            f"def main({','.join([v.name for v in variables if v.is_input])}):",
             "\tpass",
             "if __name__ == '__main__':",
             *['\t' + line for line in [
@@ -120,7 +130,7 @@ class AnnotatedIPython2CWLToolConverter:
                   f'required={variable.required})'
                   for variable in variables],
                 "args = parser.parse_args()",
-                f"main({','.join([f'{v.name}=args.{v.name}' for v in variables])})"
+                f"main({','.join([f'{v.name}=args.{v.name}' for v in variables if v.is_input])})"
             ]],
         ])
         main_function = ast.parse(main_template_code)
@@ -151,7 +161,15 @@ class AnnotatedIPython2CWLToolConverter:
                     }
                 }
                 for input_var in inputs},
-            'outputs': list(outputs),
+            'outputs': {
+                out.name: {
+                    'type': 'File',
+                    'outputBinding': {
+                        'glob': out.value
+                    }
+                }
+                for out in outputs
+            },
         }
         return cwl_tool
 
