@@ -176,7 +176,7 @@ class AnnotatedIPython2CWLToolConverter:
     def compile(self, filename: Path = Path('notebookAsCWLTool.tar')) -> str:
         """
         That method generates a tar file which includes the following files:
-        main.py - the python script
+        notebookTool - the python script
         tool.cwl - the cwl description file
         Dockerfile - the dockerfile to create the docker image
         :param: filename
