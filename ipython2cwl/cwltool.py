@@ -6,7 +6,7 @@ import tarfile
 import tempfile
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Any
 
 import astor
 import yaml
@@ -14,9 +14,9 @@ import yaml
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput
 from .requirements_manager import RequirementsManager
 
-with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.dockerfile'])) as f:
+with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.dockerfile'])) as f:
     DOCKERFILE_TEMPLATE = f.read()
-with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'template.setup.py'])) as f:
+with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.setup'])) as f:
     SETUP_TEMPLATE = f.read()
 
 
@@ -80,6 +80,23 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
                 return node
         except AttributeError:
             pass
+        return node
+
+    def visit_Import(self, node: ast.Import):
+        names = []
+        for name in node.names:  # type: ast.alias
+            if name.name == 'ipython2cwl' or name.name.startswith('ipython2cwl.'):
+                continue
+            names.append(name)
+        if len(names) > 0:
+            node.names = names
+            return node
+        else:
+            return None
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> Any:
+        if node.module == 'ipython2cwl' or node.module.startswith('ipython2cwl.'):
+            return None
         return node
 
 

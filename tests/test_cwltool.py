@@ -170,6 +170,52 @@ class TestCWLTool(TestCase):
         locals()['main']('new message')
         self.assertEqual('new message', globals()['printed_message'])
 
+    def test_AnnotatedIPython2CWLToolConverter_wrap_script_to_method_removes_ipython2cwl_imports(self):
+        annotated_python_scripts = [
+            os.linesep.join([
+                'import ipython2cwl',
+                'print("hello world")'
+            ]),
+            os.linesep.join([
+                'import ipython2cwl as foo',
+                'print("hello world")'
+            ]),
+            os.linesep.join([
+                'import ipython2cwl.iotypes',
+                'print("hello world")'
+            ]),
+            os.linesep.join([
+                'from ipython2cwl import iotypes',
+                'print("hello world")'
+            ]),
+            os.linesep.join([
+                'from ipython2cwl.iotypes import CWLFilePathInput',
+                'print("hello world")'
+            ]),
+            os.linesep.join([
+                'from ipython2cwl.iotypes import CWLFilePathInput, CWLBooleanInput',
+                'print("hello world")'
+            ]),
+            os.linesep.join([
+                'import typing, ipython2cwl',
+                'print("hello world")'
+            ])
+        ]
+        for script in annotated_python_scripts:
+            conv = AnnotatedIPython2CWLToolConverter(script)
+            new_script = conv._wrap_script_to_method(conv._tree, conv._variables)
+            print('-' * 10)
+            print(script)
+            print('-' * 2)
+            print(new_script)
+            print('-' * 10)
+            self.assertNotIn('ipython2cwl', new_script)
+
+        self.assertIn('typing', os.linesep.join([
+            'import typing, ipython2cwl'
+            'print("hello world")'
+        ]))
+
     def test_AnnotatedIPython2CWLToolConverter_output_file_annotation(self):
         import tempfile
         root_dir = tempfile.mkdtemp()
