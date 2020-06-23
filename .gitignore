@@ -243,3 +243,4 @@ cython_debug/
 /external_examples/
 /tests/jn/output/
 tmp.py
+/html/
