@@ -1,11 +1,11 @@
+import os
+import tarfile
+import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from ipython2cwl.iotypes import CWLStringInput, CWLFilePathOutput
 from ipython2cwl.cwltool import AnnotatedIPython2CWLToolConverter
-import os
-import tempfile
-import tarfile
+from ipython2cwl.iotypes import CWLStringInput, CWLFilePathOutput
 
 
 class TestCWLTool(TestCase):
@@ -228,6 +228,7 @@ class TestCWLTool(TestCase):
         ])
         converter = AnnotatedIPython2CWLToolConverter(annotated_python_script)
         new_script = converter._wrap_script_to_method(converter._tree, converter._variables)
+        self.assertNotIn(CWLFilePathOutput.__name__, new_script)
         print('\n' + new_script, '\n')
         exec(new_script)
         locals()['main']()

@@ -23,61 +23,66 @@ with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 
 # TODO: does not support recursion if main function exists
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
+    input_type_mapper = {
+        CWLFilePathInput.__name__: (
+            'File',
+            'pathlib.Path',
+        ),
+        CWLBooleanInput.__name__: (
+            'boolean',
+            'lambda flag: flag.upper() == "TRUE"',
+        ),
+        CWLIntInput.__name__: (
+            'int',
+            'int',
+        ),
+        CWLStringInput.__name__: (
+            'string',
+            'str',
+        ),
+    }
+    output_type_mapper = {
+        CWLFilePathOutput.__name__
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extracted_nodes = []
 
     def visit_AnnAssign(self, node):
-        input_type_mapper = {
-            CWLFilePathInput.__name__: (
-                'File',
-                'pathlib.Path',
-            ),
-            CWLBooleanInput.__name__: (
-                'boolean',
-                'lambda flag: flag.upper() == "TRUE"',
-            ),
-            CWLIntInput.__name__: (
-                'int',
-                'int',
-            ),
-            CWLStringInput.__name__: (
-                'string',
-                'str',
-            ),
-        }
-        output_type_mapper = {
-            CWLFilePathOutput.__name__
-        }
-        """Mapping types. First tuple required, second optional"""
         try:
-            if isinstance(node.annotation, ast.Name) and node.annotation.id in input_type_mapper:
-                mapper = input_type_mapper[node.annotation.id]
+            if isinstance(node.annotation, ast.Name) and node.annotation.id in self.input_type_mapper:
+                mapper = self.input_type_mapper[node.annotation.id]
                 self.extracted_nodes.append(
                     (node, mapper[0], mapper[1], True, True, False)
                 )
                 return None
             elif isinstance(node.annotation, ast.Subscript):
                 if node.annotation.value.id == "Optional" \
-                        and node.annotation.slice.value.id in input_type_mapper:
-                    mapper = input_type_mapper[node.annotation.slice.value.id]
+                        and node.annotation.slice.value.id in self.input_type_mapper:
+                    mapper = self.input_type_mapper[node.annotation.slice.value.id]
                     self.extracted_nodes.append(
                         (node, mapper[0] + '?', mapper[1], False, True, False)
                     )
                     return None
                 elif node.annotation.value.id == "List" \
-                        and node.annotation.slice.value.id in input_type_mapper:
-                    mapper = input_type_mapper[node.annotation.slice.value.id]
+                        and node.annotation.slice.value.id in self.input_type_mapper:
+                    mapper = self.input_type_mapper[node.annotation.slice.value.id]
                     self.extracted_nodes.append(
                         (node, mapper[0] + '[]', mapper[1], True, True, False)
                     )
                     return None
-            elif isinstance(node.annotation, ast.Name) and node.annotation.id in output_type_mapper:
+            elif isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper:
                 self.extracted_nodes.append(
                     (node, None, None, None, False, True)
                 )
-                return node
+                # removing type annotation
+                return ast.Assign(
+                    col_offset=node.col_offset,
+                    lineno=node.lineno,
+                    targets=[node.target],
+                    value=node.value
+                )
         except AttributeError:
             pass
         return node
