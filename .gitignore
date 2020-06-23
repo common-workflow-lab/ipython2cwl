@@ -240,3 +240,6 @@ cython_debug/
 .python-version
 /tests/output/
 /tests/jn/output/
+/external_examples/
+/tests/jn/output/
+tmp.py

@@ -1,0 +1,23 @@
+def main(dataset):
+    import pandas as pd
+    import matplotlib
+    data = pd.read_csv(dataset)
+    fig = data.plot()
+    original_image: CWLFilePathOutput = 'original_data.png'
+    fig.figure.savefig(original_image)
+    data.sort_values(by='Random B', ascending=False, inplace=True,
+        ignore_index=True)
+    fig = data.plot()
+    after_transform_data: CWLFilePathOutput = 'new_data.png'
+    fig.figure.savefig(after_transform_data)
+
+
+if __name__ == '__main__':
+    import argparse
+    import pathlib
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=pathlib.Path, required=True)
+    parser.add_argument('--original_image', type=None, required=None)
+    parser.add_argument('--after_transform_data', type=None, required=None)
+    args = parser.parse_args()
+    main(dataset=args.dataset)

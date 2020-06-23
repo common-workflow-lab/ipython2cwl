@@ -28,7 +28,9 @@ with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), "README.md"])
 setup(
     name=name,
     version=get_version(f"{name}/__init__.py"),
-    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+    packages=['ipython2cwl'],
+    package_dir={'ipython2cwl': 'ipython2cwl'},
+    package_data={'ipython2cwl': ['ipython2cwl/templates/*']},
     author='Yannis Doukas',
     author_email='giannisdoukas2311@gmail.com',
     description='Convert IPython Jupyter Notebooks to CWL tool',
@@ -47,8 +49,14 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     entry_points={
-        'console_scripts': ['jupyter-cwl=ipython2cwl.ipython2cwl:main'],
+        'console_scripts': [
+            'jupyter-jn2cwl=ipython2cwl.ipython2cwl:main',
+        ],
     },
-    install_requires=[],
+    install_requires=[
+        'nbformat>=5.0.6',
+        'astor>=0.8.1',
+        'PyYAML>=5.3.1'
+    ],
     test_suite='tests',
 )
