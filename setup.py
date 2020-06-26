@@ -2,7 +2,6 @@ import codecs
 import os.path
 
 from setuptools import setup
-from setuptools import find_packages
 
 name = 'ipython2cwl'
 
@@ -56,7 +55,8 @@ setup(
     install_requires=[
         'nbformat>=5.0.6',
         'astor>=0.8.1',
-        'PyYAML>=5.3.1'
+        'PyYAML>=5.3.1',
+        'gitpython>=3.1.3',
     ],
     test_suite='tests',
 )

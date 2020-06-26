@@ -256,3 +256,21 @@ class TestCWLTool(TestCase):
             },
             tool
         )
+
+    def test_AnnotatedIPython2CWLToolConverter_exclamation_mark_command(self):
+        printed_message = ''
+        annotated_python_script = os.linesep.join([
+            '!ls -la',
+            'global printed_message',
+            f"msg: {CWLStringInput.__name__} = 'original'",
+            "print('message:', msg)",
+            "printed_message = msg"
+        ])
+        exec(annotated_python_script)
+        self.assertEqual('original', globals()['printed_message'])
+        converter = AnnotatedIPython2CWLToolConverter(annotated_python_script)
+        new_script = converter._wrap_script_to_method(converter._tree, converter._variables)
+        print('\n' + new_script, '\n')
+        exec(new_script)
+        locals()['main']('new message')
+        self.assertEqual('new message', globals()['printed_message'])
