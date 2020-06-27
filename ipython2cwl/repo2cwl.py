@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import stat
 from pathlib import Path
@@ -11,6 +12,8 @@ from repo2docker import Repo2Docker
 
 from .cwltool import AnnotatedIPython2CWLToolConverter
 from .ipython2cwl import jn2code
+
+logger = logging.getLogger()
 
 
 def main(argv: Optional[List[str]] = None):
@@ -36,6 +39,47 @@ def main(argv: Optional[List[str]] = None):
     return 0
 
 
+def _get_notebook_paths_from_dir(dir_path: str):
+    notebooks_paths = []
+    for path, subdirs, files in os.walk(dir_path):
+        for name in files:
+            if name.endswith('.ipynb'):
+                notebooks_paths.append(os.path.join(path, name))
+    return notebooks_paths
+
+
+def _store_jn_as_script(notebook_path: str, git_directory_absolute_path: str, bin_absolute_path: str, image_id: str) \
+        -> Tuple[Optional[Dict], Optional[str]]:
+    with open(notebook_path) as fd:
+        code = jn2code(nbformat.read(fd, as_version=4))
+
+    converter = AnnotatedIPython2CWLToolConverter(code)
+    if len(converter._variables) == 0:
+        logger.info(f"Notebook {notebook_path} does not contains typing annotations. skipping...")
+        return None, None
+    script_relative_path = os.path.relpath(notebook_path, git_directory_absolute_path)[:-6]
+    script_relative_parent_directories = script_relative_path.split(os.sep)
+    if len(script_relative_parent_directories) > 1:
+        script_absolute_name = os.path.join(bin_absolute_path, os.sep.join(script_relative_parent_directories[:-1]))
+        os.makedirs(
+            script_absolute_name,
+            exist_ok=True)
+        script_absolute_name = os.path.join(script_absolute_name, os.path.basename(script_relative_path))
+    else:
+        script_absolute_name = os.path.join(bin_absolute_path, script_relative_path)
+    script = os.linesep.join([
+        '#!/usr/bin/env python',
+        converter._wrap_script_to_method(converter._tree, converter._variables)
+    ])
+    with open(script_absolute_name, 'w') as fd:
+        fd.write(script)
+    tool = converter.cwl_command_line_tool(image_id)
+    in_git_dir_script_file = os.path.join(bin_absolute_path, script_relative_path)
+    tool_st = os.stat(in_git_dir_script_file)
+    os.chmod(in_git_dir_script_file, tool_st.st_mode | stat.S_IEXEC)
+    return tool, script_relative_path
+
+
 def repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:
     """
     Takes an original
@@ -47,40 +91,26 @@ def repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:
     r2d.repo = git_directory_path.tree().abspath
     bin_path = os.path.join(r2d.repo, 'cwl', 'bin')
     os.makedirs(bin_path, exist_ok=True)
-    notebooks_paths = []
-    for path, subdirs, files in os.walk(r2d.repo):
-        for name in files:
-            if name.endswith('.ipynb'):
-                notebooks_paths.append(os.path.join(path, name))
+    notebooks_paths = _get_notebook_paths_from_dir(r2d.repo)
 
     tools = []
     for notebook in notebooks_paths:
-        with open(notebook) as fd:
-            code = jn2code(nbformat.read(fd, as_version=4))
-
-        converter = AnnotatedIPython2CWLToolConverter(code)
-
-        script_name = os.path.basename(notebook)[:-6]
-        new_script_path = os.path.join(bin_path, script_name)
-        script = os.linesep.join([
-            '#!/usr/bin/env python',
-            converter._wrap_script_to_method(converter._tree, converter._variables)
-        ])
-        with open(new_script_path, 'w') as fd:
-            fd.write(script)
-        tool = converter.cwl_command_line_tool(r2d.output_image_spec)
-        in_git_dir_script_file = os.path.join(bin_path, script_name)
-        tool_st = os.stat(in_git_dir_script_file)
-        os.chmod(in_git_dir_script_file, tool_st.st_mode | stat.S_IEXEC)
-
-        tool['baseCommand'] = os.path.join('/app', 'cwl', 'bin', script_name)
-        tools.append(tool)
+        cwl_command_line_tool, script_name = _store_jn_as_script(
+            notebook,
+            git_directory_path.tree().abspath,
+            bin_path,
+            r2d.output_image_spec
+        )
+        if cwl_command_line_tool is None:
+            continue
+        cwl_command_line_tool['baseCommand'] = os.path.join('/app', 'cwl', 'bin', script_name)
+        tools.append(cwl_command_line_tool)
     git_directory_path.index.commit("auto-commit")
 
     r2d.build()
     # fix dockerImageId
-    for tool in tools:
-        tool['hints']['DockerRequirement']['dockerImageId'] = r2d.output_image_spec
+    for cwl_command_line_tool in tools:
+        cwl_command_line_tool['hints']['DockerRequirement']['dockerImageId'] = r2d.output_image_spec
     return r2d.output_image_spec, tools
 
 
