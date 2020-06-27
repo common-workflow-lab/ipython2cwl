@@ -1,9 +1,11 @@
 import os
 import shutil
 import tempfile
+from io import StringIO
 from unittest import TestCase
 
 import docker
+import yaml
 from git import Repo
 
 from ipython2cwl.repo2cwl import repo2cwl
@@ -15,6 +17,7 @@ class Test2CWLFromRepo(TestCase):
 
     def test_docker_build(self):
         # TODO: test with jn with same name
+        # TODO: test having notebooks without typing annotations
         # setup a simple git repo
         git_dir = tempfile.mkdtemp()
         jn_repo = Repo.init(git_dir)
@@ -22,7 +25,11 @@ class Test2CWLFromRepo(TestCase):
             os.path.join(self.here, 'simple.ipynb'),
             os.path.join(git_dir, 'simple.ipynb'),
         )
+        with open(os.path.join(git_dir, 'requirements.txt'), 'w') as f:
+            f.write('pandas\n')
+            f.write('matplotlib\n')
         jn_repo.index.add('simple.ipynb')
+        jn_repo.index.add('requirements.txt')
         jn_repo.index.commit("initial commit")
 
         print(git_dir)
@@ -36,7 +43,7 @@ class Test2CWLFromRepo(TestCase):
             {
                 'cwlVersion': "v1.1",
                 'class': 'CommandLineTool',
-                'baseCommand': '/cwl/bin/simple',
+                'baseCommand': '/app/cwl/bin/simple',
                 'hints': {
                     'DockerRequirement': {'dockerImageId': dockerfile_image_id}
                 },
@@ -65,3 +72,6 @@ class Test2CWLFromRepo(TestCase):
             },
             cwl_tool[0]
         )
+        cwl = StringIO()
+        yaml.safe_dump(cwl_tool[0], cwl)
+        print(cwl.getvalue())

@@ -1,5 +1,6 @@
 import argparse
 import os
+import stat
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
 from urllib.parse import urlparse
@@ -59,7 +60,8 @@ def repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:
 
         converter = AnnotatedIPython2CWLToolConverter(code)
 
-        new_script_path = os.path.join(bin_path, os.path.basename(notebook)[:-6])
+        script_name = os.path.basename(notebook)[:-6]
+        new_script_path = os.path.join(bin_path, script_name)
         script = os.linesep.join([
             '#!/usr/bin/env python',
             converter._wrap_script_to_method(converter._tree, converter._variables)
@@ -67,7 +69,11 @@ def repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:
         with open(new_script_path, 'w') as fd:
             fd.write(script)
         tool = converter.cwl_command_line_tool(r2d.output_image_spec)
-        tool['baseCommand'] = '/cwl/bin/simple'
+        in_git_dir_script_file = os.path.join(bin_path, script_name)
+        tool_st = os.stat(in_git_dir_script_file)
+        os.chmod(in_git_dir_script_file, tool_st.st_mode | stat.S_IEXEC)
+
+        tool['baseCommand'] = os.path.join('/app', 'cwl', 'bin', script_name)
         tools.append(tool)
     git_directory_path.index.commit("auto-commit")
 
