@@ -1,17 +1,19 @@
 import argparse
+import json
+from io import StringIO
 from pathlib import Path
 from typing import List, Optional
 
+import nbconvert
 import nbformat
 
 from .cwltoolextractor import AnnotatedIPython2CWLToolConverter
 
 
 def jn2code(notebook):
-    return '\n'.join(
-        [f"\n\n# --------- cell - {i} ---------\n\n{cell.source}" for i, cell in
-         enumerate(filter(lambda c: c.cell_type == 'code', notebook.cells), start=1)]
-    )
+    exporter = nbconvert.PythonExporter()
+    script = exporter.from_file(StringIO(json.dumps(notebook)))
+    return script
 
 
 def main(argv: Optional[List[str]] = None):

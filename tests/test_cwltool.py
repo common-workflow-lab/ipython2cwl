@@ -4,6 +4,8 @@ import tempfile
 from pathlib import Path
 from unittest import TestCase
 
+import nbformat
+
 from ipython2cwl.cwltoolextractor import AnnotatedIPython2CWLToolConverter
 from ipython2cwl.iotypes import CWLStringInput, CWLFilePathOutput
 
@@ -257,20 +259,68 @@ class TestCWLTool(TestCase):
             tool
         )
 
-    # def test_AnnotatedIPython2CWLToolConverter_exclamation_mark_command(self):
-    #     printed_message = ''
-    #     annotated_python_script = os.linesep.join([
-    #         '!ls -la',
-    #         'global printed_message',
-    #         f"msg: {CWLStringInput.__name__} = 'original'",
-    #         "print('message:', msg)",
-    #         "printed_message = msg"
-    #     ])
-    #     exec(annotated_python_script)
-    #     self.assertEqual('original', globals()['printed_message'])
-    #     converter = AnnotatedIPython2CWLToolConverter(annotated_python_script)
-    #     new_script = converter._wrap_script_to_method(converter._tree, converter._variables)
-    #     print('\n' + new_script, '\n')
-    #     exec(new_script)
-    #     locals()['main']('new message')
-    #     self.assertEqual('new message', globals()['printed_message'])
+    def test_AnnotatedIPython2CWLToolConverter_exclamation_mark_command(self):
+        printed_message = ''
+        annotated_python_jn_node = nbformat.from_dict(
+            {
+                "cells": [
+                    {
+                        "cell_type": "code",
+                        "execution_count": None,
+                        "metadata": {},
+                        "outputs": [],
+                        "source": os.linesep.join([
+                            "!ls -la\n",
+                            "global printed_message\n",
+                            "msg: CWLStringInput = 'original'\n",
+                            "print('message:', msg)\n",
+                            "printed_message = msg"
+                        ])
+                    }
+                ],
+                "metadata": {
+                    "kernelspec": {
+                        "display_name": "Python 3",
+                        "language": "python",
+                        "name": "python3"
+                    },
+                    "language_info": {
+                        "codemirror_mode": {
+                            "name": "ipython",
+                            "version": 3
+                        },
+                        "file_extension": ".py",
+                        "mimetype": "text/x-python",
+                        "name": "python",
+                        "nbconvert_exporter": "python",
+                        "pygments_lexer": "ipython3",
+                        "version": "3.6.10"
+                    }
+                },
+                "nbformat": 4,
+                "nbformat_minor": 4
+            },
+        )
+        converter = AnnotatedIPython2CWLToolConverter.from_jupyter_notebook_node(annotated_python_jn_node)
+        new_script = converter._wrap_script_to_method(converter._tree, converter._variables)
+        new_script_without_magics = os.linesep.join(
+            [line for line in new_script.splitlines() if not line.strip().startswith('get_ipython')]
+        )
+        print('\n' + new_script, '\n')
+        exec(new_script_without_magics)
+
+        annotated_python_jn_node.cells[0].source = os.linesep.join([
+            '!ls -la',
+            'global printed_message',
+            f'msg: {CWLStringInput.__name__} = """original\n!ls -la"""',
+            "print('message:', msg)",
+            "printed_message = msg"
+        ])
+        converter = AnnotatedIPython2CWLToolConverter.from_jupyter_notebook_node(annotated_python_jn_node)
+        new_script = converter._wrap_script_to_method(converter._tree, converter._variables)
+        new_script_without_magics = os.linesep.join(
+            [line for line in new_script.splitlines() if not line.strip().startswith('get_ipython')])
+        print('\n' + new_script, '\n')
+        exec(new_script_without_magics)
+        locals()['main']('original\n!ls -l')
+        self.assertEqual('original\n!ls -l', globals()['printed_message'])

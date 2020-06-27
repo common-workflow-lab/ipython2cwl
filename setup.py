@@ -58,7 +58,8 @@ setup(
         'astor>=0.8.1',
         'PyYAML>=5.3.1',
         'gitpython>=3.1.3',
-        'jupyter-repo2docker>=0.11.0'
+        'jupyter-repo2docker>=0.11.0',
+        'nbconvert>=5.6.1'
     ],
     test_suite='tests',
 )
