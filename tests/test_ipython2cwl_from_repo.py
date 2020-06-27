@@ -8,7 +8,7 @@ import docker
 import yaml
 from git import Repo
 
-from ipython2cwl.repo2cwl import repo2cwl
+from ipython2cwl.repo2cwl import _repo2cwl
 
 
 class Test2CWLFromRepo(TestCase):
@@ -34,7 +34,7 @@ class Test2CWLFromRepo(TestCase):
 
         print(git_dir)
 
-        dockerfile_image_id, cwl_tool = repo2cwl(jn_repo)
+        dockerfile_image_id, cwl_tool = _repo2cwl(jn_repo)
         self.assertEqual(1, len(cwl_tool))
         docker_client = docker.from_env()
         script = docker_client.containers.run(dockerfile_image_id, '/app/cwl/bin/simple', entrypoint='/bin/cat')
@@ -84,7 +84,7 @@ class Test2CWLFromRepo(TestCase):
         )
         jn_repo.index.add("non-annotated.ipynb")
         jn_repo.index.commit("add non annotated notebook")
-        dockerfile_image_id, new_cwl_tool = repo2cwl(jn_repo)
+        dockerfile_image_id, new_cwl_tool = _repo2cwl(jn_repo)
         self.assertEqual(1, len(new_cwl_tool))
         cwl_tool[0]['hints']['DockerRequirement'].pop('dockerImageId')
         new_cwl_tool[0]['hints']['DockerRequirement'].pop('dockerImageId')
@@ -98,7 +98,7 @@ class Test2CWLFromRepo(TestCase):
         )
         jn_repo.index.add("subdir/simple.ipynb")
         jn_repo.index.commit("add second jn with the same name")
-        dockerfile_image_id, new_cwl_tool = repo2cwl(jn_repo)
+        dockerfile_image_id, new_cwl_tool = _repo2cwl(jn_repo)
         base_commands = [tool['baseCommand'] for tool in new_cwl_tool]
         base_commands.sort()
         self.assertListEqual(base_commands, ['/app/cwl/bin/simple', '/app/cwl/bin/subdir/simple'])
