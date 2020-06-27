@@ -18,6 +18,7 @@ class Test2CWLFromRepo(TestCase):
     def test_docker_build(self):
         # TODO: test with jn with same name
         # TODO: test having notebooks without typing annotations
+        # TODO: should I execute cwltool??
         # setup a simple git repo
         git_dir = tempfile.mkdtemp()
         jn_repo = Repo.init(git_dir)
@@ -37,7 +38,7 @@ class Test2CWLFromRepo(TestCase):
         dockerfile_image_id, cwl_tool = repo2cwl(jn_repo)
         self.assertEqual(1, len(cwl_tool))
         docker_client = docker.from_env()
-        script = docker_client.containers.run(dockerfile_image_id, 'cat /app/cwl/bin/simple')
+        script = docker_client.containers.run(dockerfile_image_id, '/app/cwl/bin/simple', entrypoint='/bin/cat')
         self.assertIn('fig.figure.savefig(after_transform_data)', script.decode())
         self.assertDictEqual(
             {
@@ -74,4 +75,5 @@ class Test2CWLFromRepo(TestCase):
         )
         cwl = StringIO()
         yaml.safe_dump(cwl_tool[0], cwl)
-        print(cwl.getvalue())
+        cwl_code = cwl.getvalue()
+        print(cwl_code)
