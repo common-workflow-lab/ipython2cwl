@@ -12,6 +12,7 @@ before_install:
 install:
   - pip install -r test-requirements.txt
   - python setup.py install
+  - pip freeze
 script:
   - pycodestyle --max-line-length=119 $(find ipython2cwl -name '*.py')
   - coverage run --source ipython2cwl -m unittest discover tests
