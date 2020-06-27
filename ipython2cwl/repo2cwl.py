@@ -100,16 +100,17 @@ def repo2cwl(argv: Optional[List[str]] = None):
     supported_schemes = {'file', 'http', 'https', 'ssh'}
     if uri.scheme not in supported_schemes:
         raise ValueError(f'Supported schema uris: {supported_schemes}')
-    local_git_directory = os.path.join(tempfile.mkdtemp(prefix='repo2cwl'), 'repo')
+    local_git_directory = os.path.join(tempfile.mkdtemp(prefix='repo2cwl_'), 'repo')
     if uri.scheme == 'file':
         if not os.path.isdir(uri.path):
             raise ValueError(f'Directory does not exists')
         logger.info(f'copy repo to temp directory: {local_git_directory}')
         shutil.copytree(uri.path, local_git_directory)
+        local_git = git.Repo(local_git_directory)
     else:
         logger.info(f'cloning repo to temp directory: {local_git_directory}')
-        git.Git(local_git_directory).clone(uri.geturl())
-    local_git = git.Repo(local_git_directory)
+        local_git = git.Repo.clone_from(uri.geturl(), local_git_directory)
+
     image_id, cwl_tools = _repo2cwl(local_git)
     logger.info(f'Generated image id: {image_id}')
     for tool in cwl_tools:

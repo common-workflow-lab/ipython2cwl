@@ -49,8 +49,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'jupyter-jn2cwl=ipython2cwl.ipython2cwl:main',
-            'jupyter-jnrepo2cwl=ipython2cwl.repo2cwl:repo2cwl',
+            # 'jupyter-jn2cwl=ipython2cwl.ipython2cwl:main',
+            'jupyter-repo2cwl=ipython2cwl.repo2cwl:repo2cwl',
         ],
     },
     install_requires=[
