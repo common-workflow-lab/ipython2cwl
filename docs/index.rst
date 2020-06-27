@@ -16,25 +16,22 @@ IPython2CWL is a tool for converting `IPython <https://ipython.org/>`_ Jupyter N
 
     from ipython2cwl.iotypes import CWLFilePathInput, CWLFilePathOutput
     import csv
-    input_filename: CWLFilePathInput = 'data.csv'
+    input_filename: 'CWLFilePathInput' = 'data.csv'
     with open(input_filename) as f:
       csv_reader = csv.reader(f)
       data = [line for line in csv_reader]
     number_of_lines = len(data)
-    result_file: CWLFilePathOutput = 'number_of_lines.txt'
+    result_file: 'CWLFilePathOutput' = 'number_of_lines.txt'
     with open(result_file, 'w') as f:
       f.write(str(number_of_lines))
 
 
 ------------------------------------------------------------------------------------------
 
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-
-   ipython2cwl
+IPython2CWL is based on `repo2docker <https://github.com/jupyter/repo2docker>`_, the same tool
+used by `mybinder <https://mybinder.org/>`_. Now, by writing Jupyter Notebook and publish them, including repo2docker
+configuration, the community can not only execute the notebooks remotely but also to use them as steps in scientific
+workflows.
 
 Indices and tables
 ==================
