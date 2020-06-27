@@ -157,8 +157,6 @@ def _repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:
     os.makedirs(bin_path, exist_ok=True)
     notebooks_paths = _get_notebook_paths_from_dir(r2d.repo)
 
-    print(5 * '-', 'NOTEBOOKS PATHS', notebooks_paths)
-
     tools = []
     for notebook in notebooks_paths:
         cwl_command_line_tool, script_name = _store_jn_as_script(
