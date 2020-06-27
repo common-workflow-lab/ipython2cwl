@@ -30,3 +30,5 @@ matrix:
         - source venv/bin/activate
         - pip3 install -U -r test-requirements.txt
       script: coverage run --source ipython2cwl -m unittest discover tests
+      services:
+        - docker
