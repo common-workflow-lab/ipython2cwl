@@ -244,3 +244,4 @@ cython_debug/
 /tests/jn/output/
 tmp.py
 /html/
+cwlbuild
