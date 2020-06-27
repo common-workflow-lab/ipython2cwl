@@ -33,6 +33,11 @@ used by `mybinder <https://mybinder.org/>`_. Now, by writing Jupyter Notebook an
 configuration, the community can not only execute the notebooks remotely but also to use them as steps in scientific
 workflows.
 
+* Install ipython2cwl
+* Ensure that you have docker running
+* Create a directory to store the generated cwl files, for example cwlbuild
+* Execute :code:`jupyter repo2cwl https://github.com/giannisdoukas/cwl-annotated-jupyter-notebook.git -o cwlbuild`
+
 Indices and tables
 ==================
 
