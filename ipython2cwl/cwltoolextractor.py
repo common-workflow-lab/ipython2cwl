@@ -51,7 +51,8 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
 
     def visit_AnnAssign(self, node):
         try:
-            if isinstance(node.annotation, ast.Name) and node.annotation.id in self.input_type_mapper:
+            if (isinstance(node.annotation, ast.Name) and node.annotation.id in self.input_type_mapper) or \
+                    (isinstance(node.annotation, ast.Str) and node.annotation.s in self.input_type_mapper):
                 mapper = self.input_type_mapper[node.annotation.id]
                 self.extracted_nodes.append(
                     (node, mapper[0], mapper[1], True, True, False)
@@ -72,7 +73,8 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
                         (node, mapper[0] + '[]', mapper[1], True, True, False)
                     )
                     return None
-            elif isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper:
+            elif (isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper) or \
+                    (isinstance(node.annotation, ast.Str) and node.annotation.s in self.output_type_mapper):
                 self.extracted_nodes.append(
                     (node, None, None, None, False, True)
                 )

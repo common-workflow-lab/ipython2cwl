@@ -18,7 +18,7 @@ from repo2docker import Repo2Docker
 from .cwltoolextractor import AnnotatedIPython2CWLToolConverter
 from .ipython2cwl import jn2code
 
-logger = logging.getLogger()
+logger = logging.getLogger('repo2cwl')
 
 
 # def main(argv: Optional[List[str]] = None):
@@ -59,6 +59,7 @@ def _store_jn_as_script(notebook_path: str, git_directory_absolute_path: str, bi
         code = jn2code(nbformat.read(fd, as_version=4))
 
     converter = AnnotatedIPython2CWLToolConverter(code)
+
     if len(converter._variables) == 0:
         logger.info(f"Notebook {notebook_path} does not contains typing annotations. skipping...")
         return None, None
@@ -102,7 +103,16 @@ def parser_arguments(argv: List[str]):
     return parser.parse_args(argv[1:])
 
 
+def setup_logger():
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+
 def repo2cwl(argv: Optional[List[str]] = None):
+    setup_logger()
     argv = sys.argv if argv is None else argv
     args = parser_arguments(argv)
     uri: ParseResult = args.repo[0]
@@ -147,6 +157,8 @@ def _repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:
     os.makedirs(bin_path, exist_ok=True)
     notebooks_paths = _get_notebook_paths_from_dir(r2d.repo)
 
+    print(5 * '-', 'NOTEBOOKS PATHS', notebooks_paths)
+
     tools = []
     for notebook in notebooks_paths:
         cwl_command_line_tool, script_name = _store_jn_as_script(
@@ -169,11 +181,4 @@ def _repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:
 
 
 if __name__ == '__main__':
-    logger.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
     repo2cwl()
