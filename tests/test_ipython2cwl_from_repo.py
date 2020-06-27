@@ -2,7 +2,7 @@ import os
 import shutil
 import tempfile
 from io import StringIO
-from unittest import TestCase
+from unittest import TestCase, skipIf
 
 import docker
 import yaml
@@ -15,6 +15,8 @@ class Test2CWLFromRepo(TestCase):
     maxDiff = None
     here = os.path.abspath(os.path.dirname(__file__))
 
+    @skipIf("TRAVIS_IGNORE_DOCKER" in os.environ and os.environ["TRAVIS_IGNORE_DOCKER"] == "true",
+            "Skipping this test on Travis CI.")
     def test_docker_build(self):
         # TODO: test with jn with same name
         # TODO: test having notebooks without typing annotations
