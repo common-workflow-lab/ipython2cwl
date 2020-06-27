@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import nbformat
 
-from cwltoolextractor import AnnotatedIPython2CWLToolConverter
+from .cwltoolextractor import AnnotatedIPython2CWLToolConverter
 
 
 def jn2code(notebook):

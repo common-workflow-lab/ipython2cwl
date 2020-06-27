@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from ipython2cwl.cwltool import AnnotatedIPython2CWLToolConverter
+from ipython2cwl.cwltoolextractor import AnnotatedIPython2CWLToolConverter
 from ipython2cwl.iotypes import CWLStringInput, CWLFilePathOutput
 
 

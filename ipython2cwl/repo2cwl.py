@@ -15,8 +15,8 @@ import yaml
 from git import Repo
 from repo2docker import Repo2Docker
 
-from cwltoolextractor import AnnotatedIPython2CWLToolConverter
-from ipython2cwl import jn2code
+from .cwltoolextractor import AnnotatedIPython2CWLToolConverter
+from .ipython2cwl import jn2code
 
 logger = logging.getLogger()
 

@@ -11,8 +11,8 @@ from typing import Dict, Any
 import astor
 import yaml
 
-from iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput
-from requirements_manager import RequirementsManager
+from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput
+from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.dockerfile'])) as f:
     DOCKERFILE_TEMPLATE = f.read()
