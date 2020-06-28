@@ -28,6 +28,6 @@ workflows.
 
 ### Example
  
-```shell script
+```
 jupyter repo2cwl https://github.com/giannisdoukas/cwl-annotated-jupyter-notebook.git -o cwlbuild
 ```
