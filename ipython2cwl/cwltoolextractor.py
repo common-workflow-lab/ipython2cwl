@@ -9,7 +9,9 @@ from pathlib import Path
 from typing import Dict, Any
 
 import astor
+import nbconvert
 import yaml
+from nbformat.notebooknode import NotebookNode
 
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput
 from .requirements_manager import RequirementsManager
@@ -51,7 +53,8 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
 
     def visit_AnnAssign(self, node):
         try:
-            if isinstance(node.annotation, ast.Name) and node.annotation.id in self.input_type_mapper:
+            if (isinstance(node.annotation, ast.Name) and node.annotation.id in self.input_type_mapper) or \
+                    (isinstance(node.annotation, ast.Str) and node.annotation.s in self.input_type_mapper):
                 mapper = self.input_type_mapper[node.annotation.id]
                 self.extracted_nodes.append(
                     (node, mapper[0], mapper[1], True, True, False)
@@ -72,7 +75,8 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
                         (node, mapper[0] + '[]', mapper[1], True, True, False)
                     )
                     return None
-            elif isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper:
+            elif (isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper) or \
+                    (isinstance(node.annotation, ast.Str) and node.annotation.s in self.output_type_mapper):
                 self.extracted_nodes.append(
                     (node, None, None, None, False, True)
                 )
@@ -121,6 +125,9 @@ class AnnotatedIPython2CWLToolConverter:
     """The annotated python code to convert."""
 
     def __init__(self, annotated_ipython_code: str):
+        """Creates an AnnotatedIPython2CWLToolConverter. If the annotated_ipython_code contains magic commands use the
+        from_jupyter_notebook_node method"""
+
         self._code = annotated_ipython_code
         extractor = AnnotatedVariablesExtractor()
         self._tree = ast.fix_missing_locations(extractor.visit(ast.parse(self._code)))
@@ -136,6 +143,12 @@ class AnnotatedIPython2CWLToolConverter:
                     self._VariableNameTypePair(node.target.id, cwl_type, click_type, required, is_input, is_output,
                                                node.value.s)
                 )
+
+    @classmethod
+    def from_jupyter_notebook_node(cls, node: NotebookNode) -> 'AnnotatedIPython2CWLToolConverter':
+        python_exporter = nbconvert.PythonExporter()
+        code = python_exporter.from_notebook_node(node)[0]
+        return cls(code)
 
     @classmethod
     def _wrap_script_to_method(cls, tree, variables) -> str:

@@ -1,3 +1,5 @@
+services:
+  - docker
 language: python
 python:
   - "3.6"
@@ -10,6 +12,7 @@ before_install:
 install:
   - pip install -r test-requirements.txt
   - python setup.py install
+  - pip freeze
 script:
   - pycodestyle --max-line-length=119 $(find ipython2cwl -name '*.py')
   - coverage run --source ipython2cwl -m unittest discover tests
@@ -28,3 +31,4 @@ matrix:
         - source venv/bin/activate
         - pip3 install -U -r test-requirements.txt
       script: coverage run --source ipython2cwl -m unittest discover tests
+      env: TRAVIS_IGNORE_DOCKER=true

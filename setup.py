@@ -2,7 +2,6 @@ import codecs
 import os.path
 
 from setuptools import setup
-from setuptools import find_packages
 
 name = 'ipython2cwl'
 
@@ -50,13 +49,18 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'jupyter-jn2cwl=ipython2cwl.ipython2cwl:main',
+            # 'jupyter-jn2cwl=ipython2cwl.ipython2cwl:main',
+            'jupyter-repo2cwl=ipython2cwl.repo2cwl:repo2cwl',
         ],
     },
     install_requires=[
         'nbformat>=5.0.6',
         'astor>=0.8.1',
-        'PyYAML>=5.3.1'
+        'PyYAML>=5.3.1',
+        'gitpython>=3.1.3',
+        'jupyter-repo2docker>=0.11.0',
+        'nbconvert==5.6.1',
+        'ipython>=7.15.0'
     ],
     test_suite='tests',
 )
