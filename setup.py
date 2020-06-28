@@ -29,7 +29,8 @@ setup(
     version=get_version(f"{name}/__init__.py"),
     packages=['ipython2cwl'],
     package_dir={'ipython2cwl': 'ipython2cwl'},
-    package_data={'ipython2cwl': ['ipython2cwl/templates/*']},
+    package_data={'': ['ipython2cwl/templates/*']},
+    include_package_data=True,
     author='Yannis Doukas',
     author_email='giannisdoukas2311@gmail.com',
     description='Convert IPython Jupyter Notebooks to CWL tool',
@@ -63,4 +64,5 @@ setup(
         'ipython>=7.15.0'
     ],
     test_suite='tests',
+    url='https://ipython2cwl.readthedocs.io/'
 )
