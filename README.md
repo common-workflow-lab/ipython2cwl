@@ -26,6 +26,13 @@ used by [mybinder](https://mybinder.org/). Now, by writing Jupyter Notebook and 
 configuration, the community can not only execute the notebooks remotely but also to use them as steps in scientific
 workflows.
 
+
+## Install
+
+```
+pip install ipython2cwl
+```
+
 ### Example
  
 ```
