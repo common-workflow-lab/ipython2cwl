@@ -2,7 +2,7 @@ import os
 import shutil
 import tempfile
 from subprocess import DEVNULL
-from unittest import TestCase
+from unittest import TestCase, skipIf
 
 import cwltool.factory
 import pkg_resources
@@ -15,6 +15,8 @@ class TestConsoleScripts(TestCase):
     here = os.path.abspath(os.path.dirname(__file__))
     repo_like_dir = os.path.join(here, 'repo-like')
 
+    @skipIf("TRAVIS_IGNORE_DOCKER" in os.environ and os.environ["TRAVIS_IGNORE_DOCKER"] == "true",
+            "Skipping this test on Travis CI.")
     def test_repo2cwl(self):
         output_dir = tempfile.mkdtemp()
         print(f'output directory:\t{output_dir}')
