@@ -47,6 +47,7 @@ class Test2CWLFromRepo(TestCase):
                 'hints': {
                     'DockerRequirement': {'dockerImageId': dockerfile_image_id}
                 },
+                'arguments': ['--'],
                 'inputs': {
                     'dataset': {
                         'type': 'File',

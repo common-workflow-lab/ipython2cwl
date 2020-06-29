@@ -13,6 +13,8 @@ install:
   - pip install -r test-requirements.txt
   - python setup.py install
   - pip freeze
+  # there is a issue in repo2docker in travis. fix file permission
+  - chmod +x $(python -c "import repo2docker; print(repo2docker.__file__[:-11])")/buildpacks/repo2docker-entrypoint
 script:
   - pycodestyle --max-line-length=119 $(find ipython2cwl -name '*.py')
   - coverage run --source ipython2cwl -m unittest discover tests
