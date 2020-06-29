@@ -13,6 +13,8 @@ install:
   - pip install -r test-requirements.txt
   - python setup.py install
   - pip freeze
+  # there is a issue in repo2docker in travis. fix file permission
+  - chmod +x $(python -c "import repo2docker; print(repo2docker.__file__[:-11])")/buildpacks/repo2docker-entrypoint
 script:
   - pycodestyle --max-line-length=119 $(find ipython2cwl -name '*.py')
   - coverage run --source ipython2cwl -m unittest discover tests
@@ -29,6 +31,7 @@ matrix:
         - pip3 install virtualenv
         - virtualenv -p python3 venv
         - source venv/bin/activate
+        - chmod +x $(python -c "import repo2docker; print(repo2docker.__file__[:-11])")/buildpacks/repo2docker-entrypoint
         - pip3 install -U -r test-requirements.txt
       script: coverage run --source ipython2cwl -m unittest discover tests
       env: TRAVIS_IGNORE_DOCKER=true

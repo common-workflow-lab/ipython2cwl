@@ -25,6 +25,12 @@ class TestConsoleScripts(TestCase):
         )
         self.assertListEqual(['example1.cwl'], [f for f in os.listdir(output_dir) if not f.startswith('.')])
 
+        with open(os.path.join(output_dir, 'example1.cwl')) as f:
+            print(20 * '=')
+            print('workflow file')
+            print(f.read())
+            print(20 * '=')
+
         runtime_context = RuntimeContext()
         runtime_context.outdir = output_dir
         runtime_context.basedir = output_dir
