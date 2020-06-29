@@ -64,6 +64,7 @@ class TestCWLTool(TestCase):
                     },
                 },
                 'outputs': {},
+                'arguments': ['--'],
             },
             cwl_tool
         )
@@ -110,6 +111,7 @@ class TestCWLTool(TestCase):
                 'hints': {
                     'DockerRequirement': {'dockerImageId': 'jn2cwl:latest'}
                 },
+                'arguments': ['--'],
                 'inputs': {
                     'input_filename': {
                         'type': 'File?',
@@ -151,6 +153,7 @@ class TestCWLTool(TestCase):
                     }
                 },
                 'outputs': {},
+                'arguments': ['--'],
             },
             cwl_tool
         )
@@ -246,6 +249,7 @@ class TestCWLTool(TestCase):
                 'hints': {
                     'DockerRequirement': {'dockerImageId': 'jn2cwl:latest'}
                 },
+                'arguments': ['--'],
                 'inputs': {},
                 'outputs': {
                     'output_path': {

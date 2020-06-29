@@ -188,6 +188,7 @@ class AnnotatedIPython2CWLToolConverter:
             'hints': {
                 'DockerRequirement': {'dockerImageId': docker_image_id}
             },
+            'arguments': ['--'],
             'inputs': {
                 input_var.name: {
                     'type': input_var.cwl_typeof,

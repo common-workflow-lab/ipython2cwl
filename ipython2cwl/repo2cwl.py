@@ -18,6 +18,7 @@ from repo2docker import Repo2Docker
 from .cwltoolextractor import AnnotatedIPython2CWLToolConverter
 
 logger = logging.getLogger('repo2cwl')
+logger.setLevel(logging.INFO)
 
 
 def _get_notebook_paths_from_dir(dir_path: str):
@@ -80,7 +81,7 @@ def parser_arguments(argv: List[str]):
     parser.add_argument('-o', '--output', help='Output directory to store the generated cwl files',
                         type=existing_path,
                         required=True)
-    return parser.parse_args(argv[1:])
+    return parser.parse_args(argv)
 
 
 def setup_logger():
@@ -91,9 +92,9 @@ def setup_logger():
     logger.addHandler(handler)
 
 
-def repo2cwl(argv: Optional[List[str]] = None):
+def repo2cwl(argv: Optional[List[str]] = None) -> int:
     setup_logger()
-    argv = sys.argv if argv is None else argv
+    argv = sys.argv[1:] if argv is None else argv
     args = parser_arguments(argv)
     uri: ParseResult = args.repo[0]
     output_directory: Path = args.output
@@ -106,7 +107,12 @@ def repo2cwl(argv: Optional[List[str]] = None):
             raise ValueError(f'Directory does not exists')
         logger.info(f'copy repo to temp directory: {local_git_directory}')
         shutil.copytree(uri.path, local_git_directory)
-        local_git = git.Repo(local_git_directory)
+        try:
+            local_git = git.Repo(local_git_directory)
+        except git.InvalidGitRepositoryError:
+            local_git = git.Repo.init(local_git_directory)
+            local_git.git.add(A=True)
+            local_git.index.commit("initial commit")
     else:
         logger.info(f'cloning repo to temp directory: {local_git_directory}')
         local_git = git.Repo.clone_from(uri.geturl(), local_git_directory)
@@ -122,6 +128,7 @@ def repo2cwl(argv: Optional[List[str]] = None):
 
     logger.info(f'Cleaning local temporary directory {local_git_directory}...')
     shutil.rmtree(local_git_directory)
+    return 0
 
 
 def _repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:

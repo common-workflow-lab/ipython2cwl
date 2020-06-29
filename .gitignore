@@ -245,3 +245,4 @@ cython_debug/
 tmp.py
 /html/
 cwlbuild
+/tests/repo-like/result.yaml
