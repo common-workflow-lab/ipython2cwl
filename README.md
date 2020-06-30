@@ -43,3 +43,7 @@ jupyter repo2cwl https://github.com/giannisdoukas/cwl-annotated-jupyter-notebook
 ### Docs
 
 [https://ipython2cwl.readthedocs.io/](https://ipython2cwl.readthedocs.io/en/latest/)
+
+### Demo
+
+[https://github.com/giannisdoukas/ipython2cwl-demo](https://github.com/giannisdoukas/ipython2cwl-demo)
