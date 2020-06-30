@@ -55,7 +55,10 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
         try:
             if (isinstance(node.annotation, ast.Name) and node.annotation.id in self.input_type_mapper) or \
                     (isinstance(node.annotation, ast.Str) and node.annotation.s in self.input_type_mapper):
-                mapper = self.input_type_mapper[node.annotation.id]
+                if hasattr(node.annotation, 'id'):
+                    mapper = self.input_type_mapper[node.annotation.id]
+                else:
+                    mapper = self.input_type_mapper[node.annotation.s]
                 self.extracted_nodes.append(
                     (node, mapper[0], mapper[1], True, True, False)
                 )
@@ -152,6 +155,7 @@ class AnnotatedIPython2CWLToolConverter:
 
     @classmethod
     def _wrap_script_to_method(cls, tree, variables) -> str:
+        add_args = cls.__get_add_arguments__([v for v in variables if v.is_input])
         main_template_code = os.linesep.join([
             f"def main({','.join([v.name for v in variables if v.is_input])}):",
             "\tpass",
@@ -160,18 +164,30 @@ class AnnotatedIPython2CWLToolConverter:
                 "import argparse",
                 'import pathlib',
                 "parser = argparse.ArgumentParser()",
-                *[f'parser.add_argument("--{variable.name}", '
-                  f'type={variable.argparse_typeof}, '
-                  f'required={variable.required})'
-                  for variable in variables],
+                *add_args,
                 "args = parser.parse_args()",
-                f"main({','.join([f'{v.name}=args.{v.name}' for v in variables if v.is_input])})"
+                f"main({','.join([f'{v.name}=args.{v.name} ' for v in variables if v.is_input])})"
             ]],
         ])
         main_function = ast.parse(main_template_code)
         [node for node in main_function.body if isinstance(node, ast.FunctionDef) and node.name == 'main'][0] \
             .body = tree.body
         return astor.to_source(main_function)
+
+    @classmethod
+    def __get_add_arguments__(cls, variables):
+        args = []
+        for variable in variables:
+            is_array = variable.cwl_typeof.endswith('[]')
+            arg: str = f'parser.add_argument("--{variable.name}", '
+            arg += f'type={variable.argparse_typeof}, '
+            arg += f'required={variable.required}, '
+            if is_array:
+                arg += f'nargs="+", '
+            arg = arg.strip()
+            arg += ')'
+            args.append(arg)
+        return args
 
     def cwl_command_line_tool(self, docker_image_id: str = 'jn2cwl:latest') -> Dict:
         """
