@@ -1,7 +1,7 @@
 # IPython2CWL
 
-[![Build Status](https://travis-ci.com/giannisdoukas/ipython2cwl.svg)](https://travis-ci.com/giannisdoukas/ipython2cwl)
-[![Coverage Status](https://coveralls.io/repos/github/giannisdoukas/ipython2cwl/badge.svg?branch=dev)](https://coveralls.io/github/giannisdoukas/ipython2cwl?branch=dev)
+[![Build Status](https://travis-ci.com/giannisdoukas/ipython2cwl.svg?branch=master)](https://travis-ci.com/giannisdoukas/ipython2cwl)
+[![Coverage Status](https://coveralls.io/repos/github/giannisdoukas/ipython2cwl/badge.svg?branch=master)](https://coveralls.io/github/giannisdoukas/ipython2cwl?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/ipython2cwl/badge/?version=latest)](https://ipython2cwl.readthedocs.io/en/latest/?badge=latest)
 [![Downloads](https://pepy.tech/badge/ipython2cwl/month)](https://pepy.tech/project/ipython2cwl/month)
 
