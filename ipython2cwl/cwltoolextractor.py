@@ -11,7 +11,6 @@ from typing import Dict, Any
 import astor
 import nbconvert
 import yaml
-from astor.string_repr import pretty_string
 from nbformat.notebooknode import NotebookNode
 
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput
@@ -177,10 +176,7 @@ class AnnotatedIPython2CWLToolConverter:
         main_function = ast.parse(main_template_code)
         [node for node in main_function.body if isinstance(node, ast.FunctionDef) and node.name == 'main'][0] \
             .body = tree.body
-        return astor.to_source(
-            main_function,
-            pretty_string=lambda s, embedded, current_line, uni: pretty_string(s, embedded, current_line, uni, max_line=500)
-        )
+        return astor.to_source(main_function)
 
     @classmethod
     def __get_add_arguments__(cls, variables):
