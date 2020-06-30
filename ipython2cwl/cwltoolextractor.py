@@ -22,7 +22,7 @@ with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 
     SETUP_TEMPLATE = f.read()
 
 
-# TODO: does not support recursion if main function exists
+# TODO: check if supports recursion if main function exists
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
     input_type_mapper = {
