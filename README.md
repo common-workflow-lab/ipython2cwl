@@ -39,3 +39,7 @@ pip install ipython2cwl
 ```
 jupyter repo2cwl https://github.com/giannisdoukas/cwl-annotated-jupyter-notebook.git -o cwlbuild
 ```
+
+### Docs
+
+[https://ipython2cwl.readthedocs.io/](https://readthedocs.org/projects/ipython2cwl/badge/?version=latest)
