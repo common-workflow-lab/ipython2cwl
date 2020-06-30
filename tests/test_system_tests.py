@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+import uuid
 from subprocess import DEVNULL
 from unittest import TestCase, skipIf
 
@@ -47,3 +48,9 @@ class TestConsoleScripts(TestCase):
             new_data = yaml.safe_load(f)
         self.assertDictEqual({'entry1': 2, 'entry2': 'foo', 'entry3': 'bar'}, new_data)
         shutil.rmtree(output_dir)
+
+    def test_repo2cwl_output_dir_does_not_exists(self):
+        random_dir_name = str(uuid.uuid4())
+        repo2cwl = pkg_resources.load_entry_point('ipython2cwl', 'console_scripts', 'jupyter-repo2cwl')
+        with self.assertRaises(SystemExit):
+            repo2cwl(['-o', random_dir_name, self.repo_like_dir])

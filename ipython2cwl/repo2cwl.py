@@ -72,7 +72,7 @@ def _store_jn_as_script(notebook_path: str, git_directory_absolute_path: str, bi
 def existing_path(path: str):
     path = Path(path)
     if not path.is_dir():
-        raise ValueError('Directory does not exists')
+        raise argparse.ArgumentTypeError(f'Directory: {str(path)} does not exists')
     return path
 
 

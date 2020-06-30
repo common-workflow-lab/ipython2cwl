@@ -42,15 +42,20 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: MacOS",
         "Operating System :: POSIX",
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Framework :: IPython",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Astronomy',
+        'Topic :: Scientific/Engineering :: Atmospheric Science',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'Topic :: Scientific/Engineering :: Information Analysis',
+        'Topic :: Scientific/Engineering :: Medical Science Apps.'
     ],
     entry_points={
         'console_scripts': [
-            # 'jupyter-jn2cwl=ipython2cwl.ipython2cwl:main',
             'jupyter-repo2cwl=ipython2cwl.repo2cwl:repo2cwl',
         ],
     },
