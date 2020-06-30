@@ -11,6 +11,7 @@ from typing import Dict, Any
 import astor
 import nbconvert
 import yaml
+from astor.string_repr import pretty_string
 from nbformat.notebooknode import NotebookNode
 
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput
@@ -78,7 +79,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             if annotation in self.input_type_mapper:
                 mapper = self.input_type_mapper[annotation]
                 self.extracted_nodes.append(
-                    (node, mapper[0], mapper[1], True, True, False)
+                    (node, mapper[0], mapper[1], not mapper[0].endswith('?'), True, False)
                 )
                 return None
 
@@ -176,18 +177,24 @@ class AnnotatedIPython2CWLToolConverter:
         main_function = ast.parse(main_template_code)
         [node for node in main_function.body if isinstance(node, ast.FunctionDef) and node.name == 'main'][0] \
             .body = tree.body
-        return astor.to_source(main_function)
+        return astor.to_source(
+            main_function,
+            pretty_string=lambda s, embedded, current_line, uni: pretty_string(s, embedded, current_line, uni, max_line=500)
+        )
 
     @classmethod
     def __get_add_arguments__(cls, variables):
         args = []
         for variable in variables:
             is_array = variable.cwl_typeof.endswith('[]')
+            is_optional = variable.cwl_typeof.endswith('?')
             arg: str = f'parser.add_argument("--{variable.name}", '
             arg += f'type={variable.argparse_typeof}, '
             arg += f'required={variable.required}, '
             if is_array:
                 arg += f'nargs="+", '
+            if is_optional:
+                arg += f'default=None, '
             arg = arg.strip()
             arg += ')'
             args.append(arg)
