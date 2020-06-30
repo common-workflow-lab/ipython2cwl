@@ -5,7 +5,8 @@ IPython2CWL: Convert Jupyter Notebook to CWL
     :target: https://travis-ci.com/giannisdoukas/ipython2cwl
 .. image:: https://coveralls.io/repos/github/giannisdoukas/ipython2cwl/badge.svg?branch=master
     :target: https://coveralls.io/github/giannisdoukas/ipython2cwl?branch=master
-
+.. image:: https://pepy.tech/badge/ipython2cwl/month
+    :target: https://github.com/giannisdoukas/ipython2cwl
 
 ------------------------------------------------------------------------------------------
 
