@@ -22,27 +22,35 @@ with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 
     SETUP_TEMPLATE = f.read()
 
 
-# TODO: does not support recursion if main function exists
+# TODO: check if supports recursion if main function exists
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
     input_type_mapper = {
-        CWLFilePathInput.__name__: (
+        (CWLFilePathInput.__name__,): (
             'File',
             'pathlib.Path',
         ),
-        CWLBooleanInput.__name__: (
+        (CWLBooleanInput.__name__,): (
             'boolean',
             'lambda flag: flag.upper() == "TRUE"',
         ),
-        CWLIntInput.__name__: (
+        (CWLIntInput.__name__,): (
             'int',
             'int',
         ),
-        CWLStringInput.__name__: (
+        (CWLStringInput.__name__,): (
             'string',
             'str',
         ),
     }
+    input_type_mapper = {**input_type_mapper, **{
+        ('List', *(t for t in types_names)): (types[0] + "[]", types[1])
+        for types_names, types in input_type_mapper.items()
+    }, **{
+        ('Optional', *(t for t in types_names)): (types[0] + "?", types[1])
+        for types_names, types in input_type_mapper.items()
+    }}
+
     output_type_mapper = {
         CWLFilePathOutput.__name__
     }
@@ -51,30 +59,29 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
         super().__init__(*args, **kwargs)
         self.extracted_nodes = []
 
+    def __get_annotation__(self, type_annotation):
+        annotation = None
+        if isinstance(type_annotation, ast.Name):
+            annotation = (type_annotation.id,)
+        elif isinstance(type_annotation, ast.Str):
+            annotation = (type_annotation.s,)
+            ann_expr = ast.parse(type_annotation.s.strip()).body[0]
+            if hasattr(ann_expr, 'value') and isinstance(ann_expr.value, ast.Subscript):
+                annotation = self.__get_annotation__(ann_expr.value)
+        elif isinstance(type_annotation, ast.Subscript):
+            annotation = (type_annotation.value.id, *self.__get_annotation__(type_annotation.slice.value))
+        return annotation
+
     def visit_AnnAssign(self, node):
         try:
-            if (isinstance(node.annotation, ast.Name) and node.annotation.id in self.input_type_mapper) or \
-                    (isinstance(node.annotation, ast.Str) and node.annotation.s in self.input_type_mapper):
-                mapper = self.input_type_mapper[node.annotation.id]
+            annotation = self.__get_annotation__(node.annotation)
+            if annotation in self.input_type_mapper:
+                mapper = self.input_type_mapper[annotation]
                 self.extracted_nodes.append(
-                    (node, mapper[0], mapper[1], True, True, False)
+                    (node, mapper[0], mapper[1], not mapper[0].endswith('?'), True, False)
                 )
                 return None
-            elif isinstance(node.annotation, ast.Subscript):
-                if node.annotation.value.id == "Optional" \
-                        and node.annotation.slice.value.id in self.input_type_mapper:
-                    mapper = self.input_type_mapper[node.annotation.slice.value.id]
-                    self.extracted_nodes.append(
-                        (node, mapper[0] + '?', mapper[1], False, True, False)
-                    )
-                    return None
-                elif node.annotation.value.id == "List" \
-                        and node.annotation.slice.value.id in self.input_type_mapper:
-                    mapper = self.input_type_mapper[node.annotation.slice.value.id]
-                    self.extracted_nodes.append(
-                        (node, mapper[0] + '[]', mapper[1], True, True, False)
-                    )
-                    return None
+
             elif (isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper) or \
                     (isinstance(node.annotation, ast.Str) and node.annotation.s in self.output_type_mapper):
                 self.extracted_nodes.append(
@@ -87,7 +94,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
                     targets=[node.target],
                     value=node.value
                 )
-        except AttributeError:
+        except Exception:
             pass
         return node
 
@@ -152,6 +159,7 @@ class AnnotatedIPython2CWLToolConverter:
 
     @classmethod
     def _wrap_script_to_method(cls, tree, variables) -> str:
+        add_args = cls.__get_add_arguments__([v for v in variables if v.is_input])
         main_template_code = os.linesep.join([
             f"def main({','.join([v.name for v in variables if v.is_input])}):",
             "\tpass",
@@ -160,18 +168,33 @@ class AnnotatedIPython2CWLToolConverter:
                 "import argparse",
                 'import pathlib',
                 "parser = argparse.ArgumentParser()",
-                *[f'parser.add_argument("--{variable.name}", '
-                  f'type={variable.argparse_typeof}, '
-                  f'required={variable.required})'
-                  for variable in variables],
+                *add_args,
                 "args = parser.parse_args()",
-                f"main({','.join([f'{v.name}=args.{v.name}' for v in variables if v.is_input])})"
+                f"main({','.join([f'{v.name}=args.{v.name} ' for v in variables if v.is_input])})"
             ]],
         ])
         main_function = ast.parse(main_template_code)
         [node for node in main_function.body if isinstance(node, ast.FunctionDef) and node.name == 'main'][0] \
             .body = tree.body
         return astor.to_source(main_function)
+
+    @classmethod
+    def __get_add_arguments__(cls, variables):
+        args = []
+        for variable in variables:
+            is_array = variable.cwl_typeof.endswith('[]')
+            is_optional = variable.cwl_typeof.endswith('?')
+            arg: str = f'parser.add_argument("--{variable.name}", '
+            arg += f'type={variable.argparse_typeof}, '
+            arg += f'required={variable.required}, '
+            if is_array:
+                arg += f'nargs="+", '
+            if is_optional:
+                arg += f'default=None, '
+            arg = arg.strip()
+            arg += ')'
+            args.append(arg)
+        return args
 
     def cwl_command_line_tool(self, docker_image_id: str = 'jn2cwl:latest') -> Dict:
         """
