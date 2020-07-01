@@ -1,19 +1,38 @@
-
-class CWLFilePathInput:
+class _CWLInput:
     pass
 
 
-class CWLBooleanInput:
+class CWLFilePathInput(_CWLInput):
     pass
 
 
-class CWLStringInput:
+class CWLBooleanInput(_CWLInput):
     pass
 
 
-class CWLIntInput:
+class CWLStringInput(_CWLInput):
     pass
 
 
-class CWLFilePathOutput:
+class CWLIntInput(_CWLInput):
+    pass
+
+
+class _CWLOutput:
+    pass
+
+
+class CWLFilePathOutput(_CWLOutput):
+    pass
+
+
+class _CWLDumpable(_CWLOutput):
+    pass
+
+
+class CWLDumpableFile(_CWLDumpable):
+    pass
+
+
+class CWLDumpableBinaryFile(_CWLDumpable):
     pass

@@ -6,20 +6,26 @@ import tarfile
 import tempfile
 from collections import namedtuple
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import astor
 import nbconvert
 import yaml
 from nbformat.notebooknode import NotebookNode
 
-from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput
+from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, CWLDumpableFile, \
+    CWLDumpableBinaryFile
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.dockerfile'])) as f:
     DOCKERFILE_TEMPLATE = f.read()
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.setup'])) as f:
     SETUP_TEMPLATE = f.read()
+
+_VariableNameTypePair = namedtuple(
+    'VariableNameTypePair',
+    ['name', 'cwl_typeof', 'argparse_typeof', 'required', 'is_input', 'is_output', 'value']
+)
 
 
 # TODO: check if supports recursion if main function exists
@@ -55,9 +61,15 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
         CWLFilePathOutput.__name__
     }
 
+    dumpable_mapper = {
+        (CWLDumpableFile.__name__,): "with open('{var_name}', 'w') as f:\n\tf.write({var_name})",
+        (CWLDumpableBinaryFile.__name__,): "with open('{var_name}', 'wb') as f:\n\tf.write({var_name})",
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.extracted_nodes = []
+        self.extracted_variables: List = []
+        self.to_dump: List = []
 
     def __get_annotation__(self, type_annotation):
         annotation = None
@@ -77,15 +89,27 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             annotation = self.__get_annotation__(node.annotation)
             if annotation in self.input_type_mapper:
                 mapper = self.input_type_mapper[annotation]
-                self.extracted_nodes.append(
-                    (node, mapper[0], mapper[1], not mapper[0].endswith('?'), True, False)
+                self.extracted_variables.append(_VariableNameTypePair(
+                    node.target.id, mapper[0], mapper[1], not mapper[0].endswith('?'), True, False, None)
                 )
                 return None
-
+            elif annotation in self.dumpable_mapper:
+                dump_tree = ast.parse(self.dumpable_mapper[annotation].format(var_name=node.target.id))
+                self.to_dump.append(dump_tree.body)
+                self.extracted_variables.append(_VariableNameTypePair(
+                    node.target.id, None, None, None, False, True, node.target.id)
+                )
+                # removing type annotation
+                return ast.Assign(
+                    col_offset=node.col_offset,
+                    lineno=node.lineno,
+                    targets=[node.target],
+                    value=node.value
+                )
             elif (isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper) or \
                     (isinstance(node.annotation, ast.Str) and node.annotation.s in self.output_type_mapper):
-                self.extracted_nodes.append(
-                    (node, None, None, None, False, True)
+                self.extracted_variables.append(_VariableNameTypePair(
+                    node.target.id, None, None, None, False, True, node.value.s)
                 )
                 # removing type annotation
                 return ast.Assign(
@@ -123,12 +147,6 @@ class AnnotatedIPython2CWLToolConverter:
     """
 
     _code: str
-
-    _VariableNameTypePair = namedtuple(
-        'VariableNameTypePair',
-        ['name', 'cwl_typeof', 'argparse_typeof', 'required', 'is_input', 'is_output', 'value']
-    )
-
     """The annotated python code to convert."""
 
     def __init__(self, annotated_ipython_code: str):
@@ -137,19 +155,15 @@ class AnnotatedIPython2CWLToolConverter:
 
         self._code = annotated_ipython_code
         extractor = AnnotatedVariablesExtractor()
-        self._tree = ast.fix_missing_locations(extractor.visit(ast.parse(self._code)))
+        self._tree = extractor.visit(ast.parse(self._code))
+        [self._tree.body.extend(d) for d in extractor.to_dump]
+        self._tree = ast.fix_missing_locations(self._tree)
         self._variables = []
-        for node, cwl_type, click_type, required, is_input, is_output in extractor.extracted_nodes:
-            if is_input:
-                self._variables.append(
-                    self._VariableNameTypePair(node.target.id, cwl_type, click_type, required, is_input, is_output,
-                                               None)
-                )
-            if is_output:
-                self._variables.append(
-                    self._VariableNameTypePair(node.target.id, cwl_type, click_type, required, is_input, is_output,
-                                               node.value.s)
-                )
+        for variable in extractor.extracted_variables:  # type: _VariableNameTypePair
+            if variable.is_input:
+                self._variables.append(variable)
+            if variable.is_output:
+                self._variables.append(variable)
 
     @classmethod
     def from_jupyter_notebook_node(cls, node: NotebookNode) -> 'AnnotatedIPython2CWLToolConverter':
