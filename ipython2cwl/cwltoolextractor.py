@@ -13,8 +13,8 @@ import nbconvert
 import yaml
 from nbformat.notebooknode import NotebookNode
 
-from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, CWLDumpableFile, \
-    CWLDumpableBinaryFile
+from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, \
+    CWLDumpableFile, CWLDumpableBinaryFile
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.dockerfile'])) as f:
