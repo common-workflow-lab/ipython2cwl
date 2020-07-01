@@ -1,3 +1,4 @@
+import ast
 import os
 import shutil
 import tempfile
@@ -39,6 +40,30 @@ class Test2CWLFromRepo(TestCase):
         docker_client = docker.from_env()
         script = docker_client.containers.run(dockerfile_image_id, '/app/cwl/bin/simple', entrypoint='/bin/cat')
         self.assertIn('fig.figure.savefig(after_transform_data)', script.decode())
+        messages_array_arg_line = ast.parse(
+            [line.strip() for line in script.decode().splitlines() if '--messages' in line][-1]
+        )
+        self.assertEqual(
+            '+',  # nargs = '+'
+            [k.value.s for k in messages_array_arg_line.body[0].value.keywords if k.arg == 'nargs'][0]
+        )
+        self.assertEqual(
+            'str',  # type = 'str'
+            [k.value.id for k in messages_array_arg_line.body[0].value.keywords if k.arg == 'type'][0]
+        )
+
+        script_tree = ast.parse(script.decode())
+        optional_expression = [x for x in script_tree.body[-1].body if
+                               isinstance(x, ast.Expr) and isinstance(x.value, ast.Call) and len(x.value.args) > 0 and
+                               x.value.args[0].s == '--optional_message'][0]
+        self.assertEqual(
+            False,
+            [k.value for k in optional_expression.value.keywords if k.arg == 'required'][0].value
+        )
+        self.assertEqual(
+            None,
+            [k.value for k in optional_expression.value.keywords if k.arg == 'default'][0].value
+        )
         self.assertDictEqual(
             {
                 'cwlVersion': "v1.1",
@@ -53,6 +78,18 @@ class Test2CWLFromRepo(TestCase):
                         'type': 'File',
                         'inputBinding': {
                             'prefix': '--dataset'
+                        }
+                    },
+                    'messages': {
+                        'type': 'string[]',
+                        'inputBinding': {
+                            'prefix': '--messages'
+                        }
+                    },
+                    'optional_message': {
+                        'type': 'string?',
+                        'inputBinding': {
+                            'prefix': '--optional_message'
                         }
                     }
                 },

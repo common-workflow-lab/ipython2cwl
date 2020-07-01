@@ -328,3 +328,52 @@ class TestCWLTool(TestCase):
         exec(new_script_without_magics)
         locals()['main']('original\n!ls -l')
         self.assertEqual('original\n!ls -l', globals()['printed_message'])
+
+    def test_AnnotatedIPython2CWLToolConverter_optional_array_input(self):
+        s1 = os.linesep.join([
+            'x1: CWLBooleanInput = True',
+        ])
+        s2 = os.linesep.join([
+            'x1: "CWLBooleanInput" = True',
+        ])
+        # all variables must be the same
+        self.assertEqual(
+            AnnotatedIPython2CWLToolConverter(s1)._variables[0],
+            AnnotatedIPython2CWLToolConverter(s2)._variables[0],
+        )
+
+        s1 = os.linesep.join([
+            'x1: Optional[CWLBooleanInput] = True',
+        ])
+        s2 = os.linesep.join([
+            'x1: "Optional[CWLBooleanInput]" = True',
+        ])
+        s3 = os.linesep.join([
+            'x1: Optional["CWLBooleanInput"] = True',
+        ])
+        # all variables must be the same
+        self.assertEqual(
+            AnnotatedIPython2CWLToolConverter(s1)._variables[0],
+            AnnotatedIPython2CWLToolConverter(s2)._variables[0],
+        )
+        self.assertEqual(
+            AnnotatedIPython2CWLToolConverter(s1)._variables[0],
+            AnnotatedIPython2CWLToolConverter(s3)._variables[0],
+        )
+
+        # test that does not crash
+        self.assertListEqual([], AnnotatedIPython2CWLToolConverter(os.linesep.join([
+            'x1: RandomHint = True'
+        ]))._variables)
+        self.assertListEqual([], AnnotatedIPython2CWLToolConverter(os.linesep.join([
+            'x1: List[RandomHint] = True'
+        ]))._variables)
+        self.assertListEqual([], AnnotatedIPython2CWLToolConverter(os.linesep.join([
+            'x1: List["RandomHint"] = True'
+        ]))._variables)
+        self.assertListEqual([], AnnotatedIPython2CWLToolConverter(os.linesep.join([
+            'x1: "List[List[Union[RandomHint, Foo]]]" = True'
+        ]))._variables)
+        self.assertListEqual([], AnnotatedIPython2CWLToolConverter(os.linesep.join([
+            'x1: "RANDOM CHARACTERS!!!!!!" = True'
+        ]))._variables)

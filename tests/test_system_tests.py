@@ -43,10 +43,17 @@ class TestConsoleScripts(TestCase):
 
         example1_tool = fac.make(os.path.join(output_dir, 'example1.cwl'))
         result = example1_tool(
-            datafilename={'class': 'File', 'location': os.path.join(self.repo_like_dir, 'data.yaml')})
+            datafilename={
+                'class': 'File', 'location': os.path.join(self.repo_like_dir, 'data.yaml')
+            },
+            messages=["hello", "test", "!!!"]
+        )
         with open(result['results_filename']['location'][7:]) as f:
             new_data = yaml.safe_load(f)
         self.assertDictEqual({'entry1': 2, 'entry2': 'foo', 'entry3': 'bar'}, new_data)
+        with open(result['messages_outputs']['location'][7:]) as f:
+            message = f.read()
+        self.assertEqual("hello test !!!", message)
         shutil.rmtree(output_dir)
 
     def test_repo2cwl_output_dir_does_not_exists(self):
