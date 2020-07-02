@@ -29,8 +29,6 @@ _VariableNameTypePair = namedtuple(
 )
 
 
-# TODO: check if supports recursion if main function exists
-
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
     input_type_mapper = {
         (CWLFilePathInput.__name__,): (
@@ -59,7 +57,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
     }}
 
     output_type_mapper = {
-        CWLFilePathOutput.__name__
+        (CWLFilePathOutput.__name__,)
     }
 
     dumpable_mapper = {
@@ -88,75 +86,80 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             annotation = (type_annotation.func.value.id, type_annotation.func.attr)
         return annotation
 
+    @classmethod
+    def conv_AnnAssign_to_Assign(cls, node):
+        return ast.Assign(
+            col_offset=node.col_offset,
+            lineno=node.lineno,
+            targets=[node.target],
+            value=node.value
+        )
+
+    def _visit_input_ann_assign(self, node, annotation):
+        mapper = self.input_type_mapper[annotation]
+        self.extracted_variables.append(_VariableNameTypePair(
+            node.target.id, mapper[0], mapper[1], not mapper[0].endswith('?'), True, False, None)
+        )
+        return None
+
+    def _visit_default_dumper(self, node, dumper):
+        dump_tree = ast.parse(dumper.format(var_name=node.target.id))
+        self.to_dump.append(dump_tree.body)
+        self.extracted_variables.append(_VariableNameTypePair(
+            node.target.id, None, None, None, False, True, node.target.id)
+        )
+        return self.conv_AnnAssign_to_Assign(node)
+
+    def _visit_user_defined_dumper(self, node):
+        load_ctx = ast.Load()
+        func_name = deepcopy(node.annotation.args[0].value)
+        func_name.ctx = load_ctx
+        ast.fix_missing_locations(func_name)
+
+        new_dump_node = ast.Expr(
+            col_offset=0, lineno=0,
+            value=ast.Call(
+                args=node.annotation.args[1:], keywords=node.annotation.keywords, col_offset=0,
+                func=ast.Attribute(
+                    attr=node.annotation.args[0].attr,
+                    value=func_name,
+                    col_offset=0, ctx=load_ctx, lineno=0,
+                ),
+            )
+        )
+        ast.fix_missing_locations(new_dump_node)
+        self.to_dump.append([new_dump_node])
+        self.extracted_variables.append(_VariableNameTypePair(
+            node.target.id, None, None, None, False, True, node.annotation.args[1].s)
+        )
+        # removing type annotation
+        return self.conv_AnnAssign_to_Assign(node)
+
+    def _visit_output_type(self, node):
+        self.extracted_variables.append(_VariableNameTypePair(
+            node.target.id, None, None, None, False, True, node.value.s)
+        )
+        # removing type annotation
+        return ast.Assign(
+            col_offset=node.col_offset,
+            lineno=node.lineno,
+            targets=[node.target],
+            value=node.value
+        )
+
     def visit_AnnAssign(self, node):
         try:
             annotation = self.__get_annotation__(node.annotation)
             if annotation in self.input_type_mapper:
-                mapper = self.input_type_mapper[annotation]
-                self.extracted_variables.append(_VariableNameTypePair(
-                    node.target.id, mapper[0], mapper[1], not mapper[0].endswith('?'), True, False, None)
-                )
-                return None
+                return self._visit_input_ann_assign(node, annotation)
             elif annotation in self.dumpable_mapper:
                 dumper = self.dumpable_mapper[annotation]
                 if dumper is not None:
-                    dump_tree = ast.parse(dumper.format(var_name=node.target.id))
-                    self.to_dump.append(dump_tree.body)
-                    self.extracted_variables.append(_VariableNameTypePair(
-                        node.target.id, None, None, None, False, True, node.target.id)
-                    )
-                    # removing type annotation
-                    return ast.Assign(
-                        col_offset=node.col_offset,
-                        lineno=node.lineno,
-                        targets=[node.target],
-                        value=node.value
-                    )
+                    return self._visit_default_dumper(node, dumper)
                 else:
-                    load_ctx = ast.Load()
-                    func_name = deepcopy(node.annotation.args[0].value)
-                    func_name.ctx = load_ctx
-                    ast.fix_missing_locations(func_name)
-
-                    new_dump_node = ast.Expr(
-                        col_offset=0, lineno=0,
-                        value=ast.Call(
-                            args=node.annotation.args[1:],
-                            col_offset=0,
-                            func=ast.Attribute(
-                                attr=node.annotation.args[0].attr,
-                                col_offset=0,
-                                ctx=load_ctx,
-                                lineno=0,
-                                value=func_name,
-                            ),
-                            keywords=node.annotation.keywords
-                        )
-                    )
-                    ast.fix_missing_locations(new_dump_node)
-                    self.to_dump.append([new_dump_node])
-                    self.extracted_variables.append(_VariableNameTypePair(
-                        node.target.id, None, None, None, False, True, node.annotation.args[1].s)
-                    )
-                    # removing type annotation
-                    return ast.Assign(
-                        col_offset=node.col_offset,
-                        lineno=node.lineno,
-                        targets=[node.target],
-                        value=node.value
-                    )
-            elif (isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper) or \
-                    (isinstance(node.annotation, ast.Str) and node.annotation.s in self.output_type_mapper):
-                self.extracted_variables.append(_VariableNameTypePair(
-                    node.target.id, None, None, None, False, True, node.value.s)
-                )
-                # removing type annotation
-                return ast.Assign(
-                    col_offset=node.col_offset,
-                    lineno=node.lineno,
-                    targets=[node.target],
-                    value=node.value
-                )
+                    return self._visit_user_defined_dumper(node)
+            elif annotation in self.output_type_mapper:
+                return self._visit_output_type(node)
         except Exception:
             pass
         return node
