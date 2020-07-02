@@ -247,3 +247,6 @@ tmp.py
 cwlbuild
 /tests/repo-like/result.yaml
 /tests/repo-like/messages.txt
+/tests/binary_message
+/tests/message
+/tests/message2

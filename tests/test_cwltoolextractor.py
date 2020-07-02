@@ -377,3 +377,100 @@ class TestCWLTool(TestCase):
         self.assertListEqual([], AnnotatedIPython2CWLToolConverter(os.linesep.join([
             'x1: "RANDOM CHARACTERS!!!!!!" = True'
         ]))._variables)
+
+    def test_AnnotatedIPython2CWLToolConverter_dumpables(self):
+        script = os.linesep.join([
+            'message: CWLDumpableFile = "this is a text from a dumpable"',
+            'message2: "CWLDumpableFile" = "this is a text from a dumpable 2"',
+            'binary_message: CWLDumpableBinaryFile = b"this is a text from a binary dumpable"',
+            'print("Message:", message)',
+            'print(b"Binary Message:" + binary_message)',
+        ])
+        converter = AnnotatedIPython2CWLToolConverter(script)
+        generated_script = AnnotatedIPython2CWLToolConverter._wrap_script_to_method(
+            converter._tree, converter._variables
+        )
+        for f in ['message', 'binary_message', 'message2']:
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                pass
+        exec(generated_script)
+        print(generated_script)
+        locals()['main']()
+        with open('message') as f:
+            self.assertEqual('this is a text from a dumpable', f.read())
+        with open('message2') as f:
+            self.assertEqual('this is a text from a dumpable 2', f.read())
+        with open('binary_message', 'rb') as f:
+            self.assertEqual(b'this is a text from a binary dumpable', f.read())
+
+        cwl_tool = converter.cwl_command_line_tool()
+        print(cwl_tool)
+        self.assertDictEqual(
+            {
+                'message': {
+                    'type': 'File',
+                    'outputBinding': {
+                        'glob': 'message'
+                    }
+                },
+                'message2': {
+                    'type': 'File',
+                    'outputBinding': {
+                        'glob': 'message2'
+                    }
+                },
+                'binary_message': {
+                    'type': 'File',
+                    'outputBinding': {
+                        'glob': 'binary_message'
+                    }
+                }
+            },
+            cwl_tool['outputs']
+        )
+
+    def test_AnnotatedIPython2CWLToolConverter_custom_dumpables(self):
+        script = os.linesep.join([
+            'import pandas',
+            'from ipython2cwl.iotypes import CWLDumpable',
+            'd: CWLDumpable.dump(d.to_csv, "dumpable.csv", sep="\\t", index=False) = pandas.DataFrame([[1,2,3], [4,5,6], [7,8,9]])'
+        ])
+        converter = AnnotatedIPython2CWLToolConverter(script)
+        generated_script = AnnotatedIPython2CWLToolConverter._wrap_script_to_method(
+            converter._tree, converter._variables
+        )
+        for f in ["dumpable.csv"]:
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                pass
+        exec(generated_script)
+        print(generated_script)
+        locals()['main']()
+        import pandas
+        data_file = pandas.read_csv('dumpable.csv', sep="\t")
+        self.assertListEqual(
+            [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+            (data_file.to_numpy() - pandas.DataFrame([[1, 2, 3], [4, 5, 6], [7, 8, 9]]).to_numpy()).tolist()
+        )
+
+        cwl_tool = converter.cwl_command_line_tool()
+        print(cwl_tool)
+        self.assertDictEqual(
+            {
+                'd': {
+                    'type': 'File',
+                    'outputBinding': {
+                        'glob': 'dumpable.csv'
+                    }
+                },
+            },
+            cwl_tool['outputs']
+        )
+        for f in ["dumpable.csv"]:
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                pass
