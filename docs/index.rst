@@ -30,18 +30,53 @@ IPython2CWL is a tool for converting `IPython <https://ipython.org/>`_ Jupyter N
 ------------------------------------------------------------------------------------------
 
 IPython2CWL is based on `repo2docker <https://github.com/jupyter/repo2docker>`_, the same tool
-used by `mybinder <https://mybinder.org/>`_. Now, by writing Jupyter Notebook and publish them, including repo2docker
-configuration, the community can not only execute the notebooks remotely but also to use them as steps in scientific
+used by `mybinder <https://mybinder.org/>`_. Now, by writing Jupyter Notebook and publishing them, including repo2docker
+configuration, the community can not only execute the notebooks remotely but can also use them as steps in scientific
 workflows.
 
-* Install ipython2cwl: :code:`pip install python2cwl`
+* `Install ipython2cwl <https://pypi.org/project/ipython2cwl/>`_: :code:`pip install ipython2cwl`
 * Ensure that you have docker running
 * Create a directory to store the generated cwl files, for example cwlbuild
 * Execute :code:`jupyter repo2cwl https://github.com/giannisdoukas/cwl-annotated-jupyter-notebook.git -o cwlbuild`
 
-Indices and tables
-==================
+HOW IT WORKS?
+------------------
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+IPython2CWL parses each IPython notebook and finds the variables with the typing annotations. For each input variable,
+the assigment of that variable will be generalised as a command line argument. Each output variable will be mapped
+in the cwl description as an output file.
+
+SUPPORTED TYPES
+------------------
+
+.. automodule:: ipython2cwl.iotypes
+   :members:
+
+
+THAT'S COOL! WHAT ABOUT LIST & OPTIONAL ARGUMENTS?
+"""""""""""""""""""""""""""""""""""""""""""""""""""
+
+The basic input data types can be combined with the List and Optional annotations. For example, write the following
+annotation:
+
+.. code-block:: python
+
+  file_inputs: List[CWLFilePathInput] = ['data1.txt', 'data2.txt', 'data3.txt']
+  example: Optional[CWLStringInput] = None
+
+
+SEEMS INTERESTING! WHAT ABOUT A DEMO?
+----------------------------------------
+
+If you would like to see a demo before you want to start annotating your notebooks check here!
+`github.com/giannisdoukas/ipython2cwl-demo <https://github.com/giannisdoukas/ipython2cwl-demo>`_
+
+
+WHAT IF I WANT TO VALIDATE THAT THE GENERATED SCRIPTS ARE CORRECT?
+------------------------------------------------------------------
+
+All the generated scripts are stored in the docker image under the directory :code:`/app/cwl/bin`. You can see the list
+of the files by running :code:`docker run [IMAGE_ID] find /app/cwl/bin/ -type f`.
+
+
+
