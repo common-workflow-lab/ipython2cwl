@@ -1,5 +1,6 @@
 # IPython2CWL
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ed284fda44ca4398a6f26d496662eae2)](https://app.codacy.com/manual/giannisdoukas/ipython2cwl?utm_source=github.com&utm_medium=referral&utm_content=giannisdoukas/ipython2cwl&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.com/giannisdoukas/ipython2cwl.svg?branch=master)](https://travis-ci.com/giannisdoukas/ipython2cwl)
 [![Coverage Status](https://coveralls.io/repos/github/giannisdoukas/ipython2cwl/badge.svg?branch=master)](https://coveralls.io/github/giannisdoukas/ipython2cwl?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/ipython2cwl/badge/?version=latest)](https://ipython2cwl.readthedocs.io/en/latest/?badge=latest)
