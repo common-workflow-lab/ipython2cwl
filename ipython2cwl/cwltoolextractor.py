@@ -5,6 +5,7 @@ import shutil
 import tarfile
 import tempfile
 from collections import namedtuple
+from copy import deepcopy
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -14,7 +15,7 @@ import yaml
 from nbformat.notebooknode import NotebookNode
 
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, \
-    CWLDumpableFile, CWLDumpableBinaryFile
+    CWLDumpableFile, CWLDumpableBinaryFile, CWLDumpable
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.dockerfile'])) as f:
@@ -64,6 +65,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
     dumpable_mapper = {
         (CWLDumpableFile.__name__,): "with open('{var_name}', 'w') as f:\n\tf.write({var_name})",
         (CWLDumpableBinaryFile.__name__,): "with open('{var_name}', 'wb') as f:\n\tf.write({var_name})",
+        (CWLDumpable.__name__, CWLDumpable.dump.__name__): None,
     }
 
     def __init__(self, *args, **kwargs):
@@ -82,6 +84,8 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
                 annotation = self.__get_annotation__(ann_expr.value)
         elif isinstance(type_annotation, ast.Subscript):
             annotation = (type_annotation.value.id, *self.__get_annotation__(type_annotation.slice.value))
+        elif isinstance(type_annotation, ast.Call):
+            annotation = (type_annotation.func.value.id, type_annotation.func.attr)
         return annotation
 
     def visit_AnnAssign(self, node):
@@ -94,18 +98,53 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
                 )
                 return None
             elif annotation in self.dumpable_mapper:
-                dump_tree = ast.parse(self.dumpable_mapper[annotation].format(var_name=node.target.id))
-                self.to_dump.append(dump_tree.body)
-                self.extracted_variables.append(_VariableNameTypePair(
-                    node.target.id, None, None, None, False, True, node.target.id)
-                )
-                # removing type annotation
-                return ast.Assign(
-                    col_offset=node.col_offset,
-                    lineno=node.lineno,
-                    targets=[node.target],
-                    value=node.value
-                )
+                dumper = self.dumpable_mapper[annotation]
+                if dumper is not None:
+                    dump_tree = ast.parse(dumper.format(var_name=node.target.id))
+                    self.to_dump.append(dump_tree.body)
+                    self.extracted_variables.append(_VariableNameTypePair(
+                        node.target.id, None, None, None, False, True, node.target.id)
+                    )
+                    # removing type annotation
+                    return ast.Assign(
+                        col_offset=node.col_offset,
+                        lineno=node.lineno,
+                        targets=[node.target],
+                        value=node.value
+                    )
+                else:
+                    load_ctx = ast.Load()
+                    func_name = deepcopy(node.annotation.args[0].value)
+                    func_name.ctx = load_ctx
+                    ast.fix_missing_locations(func_name)
+
+                    new_dump_node = ast.Expr(
+                        col_offset=0, lineno=0,
+                        value=ast.Call(
+                            args=node.annotation.args[1:],
+                            col_offset=0,
+                            func=ast.Attribute(
+                                attr=node.annotation.args[0].attr,
+                                col_offset=0,
+                                ctx=load_ctx,
+                                lineno=0,
+                                value=func_name,
+                            ),
+                            keywords=node.annotation.keywords
+                        )
+                    )
+                    ast.fix_missing_locations(new_dump_node)
+                    self.to_dump.append([new_dump_node])
+                    self.extracted_variables.append(_VariableNameTypePair(
+                        node.target.id, None, None, None, False, True, node.annotation.args[1].s)
+                    )
+                    # removing type annotation
+                    return ast.Assign(
+                        col_offset=node.col_offset,
+                        lineno=node.lineno,
+                        targets=[node.target],
+                        value=node.value
+                    )
             elif (isinstance(node.annotation, ast.Name) and node.annotation.id in self.output_type_mapper) or \
                     (isinstance(node.annotation, ast.Str) and node.annotation.s in self.output_type_mapper):
                 self.extracted_variables.append(_VariableNameTypePair(

@@ -430,3 +430,47 @@ class TestCWLTool(TestCase):
             },
             cwl_tool['outputs']
         )
+
+    def test_AnnotatedIPython2CWLToolConverter_custom_dumpables(self):
+        script = os.linesep.join([
+            'import pandas',
+            'from ipython2cwl.iotypes import CWLDumpable',
+            'd: CWLDumpable.dump(d.to_csv, "dumpable.csv", sep="\\t", index=False) = pandas.DataFrame([[1,2,3], [4,5,6], [7,8,9]])'
+        ])
+        converter = AnnotatedIPython2CWLToolConverter(script)
+        generated_script = AnnotatedIPython2CWLToolConverter._wrap_script_to_method(
+            converter._tree, converter._variables
+        )
+        for f in ["dumpable.csv"]:
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                pass
+        exec(generated_script)
+        print(generated_script)
+        locals()['main']()
+        import pandas
+        data_file = pandas.read_csv('dumpable.csv', sep="\t")
+        self.assertListEqual(
+            [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+            (data_file.to_numpy() - pandas.DataFrame([[1, 2, 3], [4, 5, 6], [7, 8, 9]]).to_numpy()).tolist()
+        )
+
+        cwl_tool = converter.cwl_command_line_tool()
+        print(cwl_tool)
+        self.assertDictEqual(
+            {
+                'd': {
+                    'type': 'File',
+                    'outputBinding': {
+                        'glob': 'dumpable.csv'
+                    }
+                },
+            },
+            cwl_tool['outputs']
+        )
+        for f in ["dumpable.csv"]:
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                pass
