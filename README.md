@@ -23,7 +23,7 @@ with open(result_file, 'w') as f:
 ```
 
 IPython2CWL is based on [repo2docker](https://github.com/jupyter/repo2docker), the same tool
-used by [mybinder](https://mybinder.org/). Now, by writing Jupyter Notebook and publish them, including repo2docker
+used by [mybinder](https://mybinder.org/). Now, by writing Jupyter Notebook and publishing them, including repo2docker
 configuration, the community can not only execute the notebooks remotely but also to use them as steps in scientific
 workflows.
 
