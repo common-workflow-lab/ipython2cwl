@@ -7,12 +7,12 @@ import tempfile
 from collections import namedtuple
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
-import astor
-import nbconvert
+import astor  # type: ignore
+import nbconvert  # type: ignore
 import yaml
-from nbformat.notebooknode import NotebookNode
+from nbformat.notebooknode import NotebookNode  # type: ignore
 
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, \
     CWLDumpableFile, CWLDumpableBinaryFile, CWLDumpable
@@ -30,7 +30,7 @@ _VariableNameTypePair = namedtuple(
 
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
-    input_type_mapper = {
+    input_type_mapper: Dict[Tuple[str, ...], Tuple[str, str]] = {
         (CWLFilePathInput.__name__,): (
             'File',
             'pathlib.Path',
@@ -177,7 +177,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             return None
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> Any:
-        if node.module == 'ipython2cwl' or node.module.startswith('ipython2cwl.'):
+        if node.module == 'ipython2cwl' or (node.module is not None and node.module.startswith('ipython2cwl.')):
             return None
         return node
 
@@ -299,14 +299,18 @@ class AnnotatedIPython2CWLToolConverter:
         """
         workdir = tempfile.mkdtemp()
         script_path = os.path.join(workdir, 'notebookTool')
-        cwl_path = os.path.join(workdir, 'tool.cwl')
+        cwl_path: str = os.path.join(workdir, 'tool.cwl')
         dockerfile_path = os.path.join(workdir, 'Dockerfile')
         setup_path = os.path.join(workdir, 'setup.py')
         requirements_path = os.path.join(workdir, 'requirements.txt')
-        with open(script_path, 'wb') as f:
-            f.write(self._wrap_script_to_method(self._tree, self._variables).encode())
-        with open(cwl_path, 'w') as f:
-            yaml.safe_dump(self.cwl_command_line_tool(), f, encoding='utf-8')
+        with open(script_path, 'wb') as script_fd:
+            script_fd.write(self._wrap_script_to_method(self._tree, self._variables).encode())
+        with open(cwl_path, 'w') as cwl_fd:
+            yaml.safe_dump(
+                self.cwl_command_line_tool(),
+                cwl_fd,
+                encoding='utf-8'
+            )
         dockerfile = DOCKERFILE_TEMPLATE.format(
             python_version=f'python:{".".join(platform.python_version_tuple())}'
         )
