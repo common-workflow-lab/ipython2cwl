@@ -19,6 +19,7 @@ script:
   - pycodestyle --max-line-length=119 $(find ipython2cwl -name '*.py')
   - coverage run --source ipython2cwl -m unittest discover tests
   - coveralls
+  - make mypy
 matrix:
   include:
     - name: "Python 3.7 on macOS 10.13"

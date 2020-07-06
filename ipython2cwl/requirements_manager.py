@@ -1,6 +1,6 @@
 from typing import List
 
-from pip._internal.operations import freeze
+from pip._internal.operations import freeze  # type: ignore
 
 
 class RequirementsManager:
