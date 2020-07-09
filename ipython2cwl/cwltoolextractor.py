@@ -30,6 +30,9 @@ _VariableNameTypePair = namedtuple(
 
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
+    """AnnotatedVariablesExtractor removes the typing annotations
+        from relative to ipython2cwl and identifies all the variables
+        relative to an ipython2cwl typing annotation."""
     input_type_mapper: Dict[Tuple[str, ...], Tuple[str, str]] = {
         (CWLFilePathInput.__name__,): (
             'File',
@@ -67,11 +70,15 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
     }
 
     def __init__(self, *args, **kwargs):
+        """Create an AnnotatedVariablesExtractor"""
         super().__init__(*args, **kwargs)
         self.extracted_variables: List = []
         self.to_dump: List = []
 
     def __get_annotation__(self, type_annotation):
+        """Parses the annotation and returns it in a canonical format.
+        If the annotation was a string 'CWLStringInput' the function
+        will return you the object."""
         annotation = None
         if isinstance(type_annotation, ast.Name):
             annotation = (type_annotation.id,)
@@ -164,7 +171,8 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             pass
         return node
 
-    def visit_Import(self, node: ast.Import):
+    def visit_Import(self, node: ast.Import) -> Any:
+        """Remove ipython2cwl imports """
         names = []
         for name in node.names:  # type: ast.alias
             if name.name == 'ipython2cwl' or name.name.startswith('ipython2cwl.'):
@@ -177,6 +185,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             return None
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> Any:
+        """Remove ipython2cwl imports """
         if node.module == 'ipython2cwl' or (node.module is not None and node.module.startswith('ipython2cwl.')):
             return None
         return node
@@ -188,8 +197,7 @@ class AnnotatedIPython2CWLToolConverter:
     with the described inputs & outputs.
     """
 
-    _code: str
-    """The annotated python code to convert."""
+    _code: str  # The annotated python code to convert.
 
     def __init__(self, annotated_ipython_code: str):
         """Creates an AnnotatedIPython2CWLToolConverter. If the annotated_ipython_code contains magic commands use the
@@ -198,7 +206,8 @@ class AnnotatedIPython2CWLToolConverter:
         self._code = annotated_ipython_code
         extractor = AnnotatedVariablesExtractor()
         self._tree = extractor.visit(ast.parse(self._code))
-        [self._tree.body.extend(d) for d in extractor.to_dump]
+        for d in extractor.to_dump:
+            self._tree.body.extend(d)
         self._tree = ast.fix_missing_locations(self._tree)
         self._variables = []
         for variable in extractor.extracted_variables:  # type: _VariableNameTypePair
