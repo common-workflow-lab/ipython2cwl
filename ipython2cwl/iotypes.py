@@ -162,7 +162,7 @@ class CWLDumpableBinaryFile(CWLDumpable):
 
 class CWLPNGPlot(CWLDumpable):
     """Use that annotation to define that after the assigment of that variable the plt.savefig() should
-    be called
+    be called.
 
     >>> import matplotlib.pyplot as plt
     >>> data = [1,2,3]
@@ -175,5 +175,33 @@ class CWLPNGPlot(CWLDumpable):
     >>> new_data: 'CWLPNGPlot' = plt.plot(data)
     >>> plt.savefig('new_data.png')
 
+
+    Note that by default if you have multiple plot statements in the same notebook will be written
+    in the same file. If you want to write them in separates you have to do it in separate figures.
+    To do that in your notebook you have to create a new figure before the plot command or use the CWLPNGFigure.
+
+    >>> import matplotlib.pyplot as plt
+    >>> data = [1,2,3]
+    >>> plt.figure()
+    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
     """
     pass
+
+
+class CWLPNGFigure(CWLDumpable):
+    """The same with CWLPNGPlot but creates new figures before plotting. Use that annotation of you don't want
+    to write multiple graphs in the same image
+
+    >>> import matplotlib.pyplot as plt
+    >>> data = [1,2,3]
+    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+
+    the converter will tranform these lines to
+
+    >>> import matplotlib.pyplot as plt
+    >>> data = [1,2,3]
+    >>> plt.figure()
+    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+    >>> plt.savefig('new_data.png')
+
+    """
