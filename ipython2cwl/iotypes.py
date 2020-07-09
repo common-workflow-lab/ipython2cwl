@@ -158,3 +158,22 @@ class CWLDumpableBinaryFile(CWLDumpable):
     and at the CWL, the data, will be mapped as a output.
     """
     pass
+
+
+class CWLPNGPlot(CWLDumpable):
+    """Use that annotation to define that after the assigment of that variable the plt.savefig() should
+    be called
+
+    >>> import matplotlib.pyplot as plt
+    >>> data = [1,2,3]
+    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+
+    the converter will tranform these lines to
+
+    >>> import matplotlib.pyplot as plt
+    >>> data = [1,2,3]
+    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+    >>> plt.savefig('new_data.png')
+
+    """
+    pass

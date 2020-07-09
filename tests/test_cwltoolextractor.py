@@ -474,3 +474,45 @@ class TestCWLTool(TestCase):
                 os.remove(f)
             except FileNotFoundError:
                 pass
+
+    def test_AnnotatedIPython2CWLToolConverter_CWLPNGPlot(self):
+        code = os.linesep.join([
+            "import matplotlib.pyplot as plt",
+            "new_data: 'CWLPNGPlot' = plt.plot([1,2,3,4])",
+        ])
+        converter = AnnotatedIPython2CWLToolConverter(code)
+        new_script = converter._wrap_script_to_method(
+            converter._tree,
+            converter._variables
+        )
+        try:
+            os.remove('new_data.png')
+        except FileNotFoundError:
+            pass
+        exec(new_script)
+        locals()['main']()
+        self.assertTrue(os.path.isfile('new_data.png'))
+        os.remove('new_data.png')
+
+        tool = converter.cwl_command_line_tool()
+        self.assertDictEqual(
+            {
+                'cwlVersion': "v1.1",
+                'class': 'CommandLineTool',
+                'baseCommand': 'notebookTool',
+                'hints': {
+                    'DockerRequirement': {'dockerImageId': 'jn2cwl:latest'}
+                },
+                'arguments': ['--'],
+                'inputs': {},
+                'outputs': {
+                    'new_data': {
+                        'type': 'File',
+                        'outputBinding': {
+                            'glob': 'new_data.png'
+                        }
+                    }
+                },
+            },
+            tool
+        )

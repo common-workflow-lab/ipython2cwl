@@ -15,7 +15,7 @@ import yaml
 from nbformat.notebooknode import NotebookNode  # type: ignore
 
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, \
-    CWLDumpableFile, CWLDumpableBinaryFile, CWLDumpable
+    CWLDumpableFile, CWLDumpableBinaryFile, CWLDumpable, CWLPNGPlot
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.dockerfile'])) as f:
@@ -61,9 +61,16 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
     }
 
     dumpable_mapper = {
-        (CWLDumpableFile.__name__,): "with open('{var_name}', 'w') as f:\n\tf.write({var_name})",
-        (CWLDumpableBinaryFile.__name__,): "with open('{var_name}', 'wb') as f:\n\tf.write({var_name})",
+        (CWLDumpableFile.__name__,): (
+            "with open('{var_name}', 'w') as f:\n\tf.write({var_name})", lambda node: node.target.id
+        ),
+        (CWLDumpableBinaryFile.__name__,): (
+            "with open('{var_name}', 'wb') as f:\n\tf.write({var_name})", lambda node: node.target.id
+        ),
         (CWLDumpable.__name__, CWLDumpable.dump.__name__): None,
+        (CWLPNGPlot.__name__,): (
+            'import matplotlib.pyplot as plt\nplt.savefig("{var_name}.png")',
+            lambda node: str(node.target.id) + '.png'),
     }
 
     def __init__(self, *args, **kwargs):
@@ -103,12 +110,11 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
         return None
 
     def _visit_default_dumper(self, node, dumper):
-        dump_tree = ast.parse(dumper.format(var_name=node.target.id))
-        self.to_dump.append(dump_tree.body)
+        dump_tree = ast.parse(dumper[0].format(var_name=node.target.id))
         self.extracted_variables.append(_VariableNameTypePair(
-            node.target.id, None, None, None, False, True, node.target.id)
+            node.target.id, None, None, None, False, True, dumper[1](node))
         )
-        return self.conv_AnnAssign_to_Assign(node)
+        return [self.conv_AnnAssign_to_Assign(node), *dump_tree.body]
 
     def _visit_user_defined_dumper(self, node):
         load_ctx = ast.Load()
