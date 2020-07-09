@@ -7,12 +7,12 @@ import tempfile
 from collections import namedtuple
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
-import astor
-import nbconvert
+import astor  # type: ignore
+import nbconvert  # type: ignore
 import yaml
-from nbformat.notebooknode import NotebookNode
+from nbformat.notebooknode import NotebookNode  # type: ignore
 
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, \
     CWLDumpableFile, CWLDumpableBinaryFile, CWLDumpable
@@ -33,7 +33,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
     """AnnotatedVariablesExtractor removes the typing annotations
     from relative to ipython2cwl and identifies all the variables
     relative to an ipython2cwl typing annotation."""
-    input_type_mapper = {
+    input_type_mapper: Dict[Tuple[str, ...], Tuple[str, str]] = {
         (CWLFilePathInput.__name__,): (
             'File',
             'pathlib.Path',
@@ -186,7 +186,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> Any:
         """Remove ipython2cwl imports """
-        if node.module == 'ipython2cwl' or node.module.startswith('ipython2cwl.'):
+        if node.module == 'ipython2cwl' or (node.module is not None and node.module.startswith('ipython2cwl.')):
             return None
         return node
 
