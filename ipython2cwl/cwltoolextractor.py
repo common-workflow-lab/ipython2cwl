@@ -30,6 +30,9 @@ _VariableNameTypePair = namedtuple(
 
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
+    """AnnotatedVariablesExtractor removes the typing annotations
+    from relative to ipython2cwl and identifies all the variables
+    relative to an ipython2cwl typing annotation."""
     input_type_mapper = {
         (CWLFilePathInput.__name__,): (
             'File',
@@ -67,11 +70,15 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
     }
 
     def __init__(self, *args, **kwargs):
+        """Create an AnnotatedVariablesExtractor"""
         super().__init__(*args, **kwargs)
         self.extracted_variables: List = []
         self.to_dump: List = []
 
     def __get_annotation__(self, type_annotation):
+        """Parses the annotation and returns it in a canonical format.
+        If the annotation was a string 'CWLStringInput' the function
+        will return you the object."""
         annotation = None
         if isinstance(type_annotation, ast.Name):
             annotation = (type_annotation.id,)
@@ -164,7 +171,8 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             pass
         return node
 
-    def visit_Import(self, node: ast.Import):
+    def visit_Import(self, node: ast.Import) -> Any:
+        """Remove ipython2cwl imports """
         names = []
         for name in node.names:  # type: ast.alias
             if name.name == 'ipython2cwl' or name.name.startswith('ipython2cwl.'):
@@ -177,6 +185,7 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
             return None
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> Any:
+        """Remove ipython2cwl imports """
         if node.module == 'ipython2cwl' or node.module.startswith('ipython2cwl.'):
             return None
         return node
