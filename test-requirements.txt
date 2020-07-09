@@ -7,3 +7,4 @@ docker>=4.2.1
 cwltool==3.0.20200706173533
 pandas==1.0.5
 mypy
+matplotlib
