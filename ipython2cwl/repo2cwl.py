@@ -9,11 +9,11 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Dict
 from urllib.parse import urlparse, ParseResult
 
-import git
-import nbformat
+import git  # type: ignore
+import nbformat  # type: ignore
 import yaml
 from git import Repo
-from repo2docker import Repo2Docker
+from repo2docker import Repo2Docker  # type: ignore
 
 from .cwltoolextractor import AnnotatedIPython2CWLToolConverter
 
@@ -68,8 +68,8 @@ def _store_jn_as_script(notebook_path: str, git_directory_absolute_path: str, bi
     return tool, script_relative_path
 
 
-def existing_path(path: str):
-    path = Path(path)
+def existing_path(path_str: str):
+    path: Path = Path(path_str)
     if not path.is_dir():
         raise argparse.ArgumentTypeError(f'Directory: {str(path)} does not exists')
     return path
@@ -159,7 +159,7 @@ def _repo2cwl(git_directory_path: Repo) -> Tuple[str, List[Dict]]:
             bin_path,
             r2d.output_image_spec
         )
-        if cwl_command_line_tool is None:
+        if cwl_command_line_tool is None or script_name is None:
             continue
         cwl_command_line_tool['baseCommand'] = os.path.join('/app', 'cwl', 'bin', script_name)
         tools.append(cwl_command_line_tool)

@@ -31,8 +31,8 @@ _VariableNameTypePair = namedtuple(
 
 class AnnotatedVariablesExtractor(ast.NodeTransformer):
     """AnnotatedVariablesExtractor removes the typing annotations
-    from relative to ipython2cwl and identifies all the variables
-    relative to an ipython2cwl typing annotation."""
+        from relative to ipython2cwl and identifies all the variables
+        relative to an ipython2cwl typing annotation."""
     input_type_mapper: Dict[Tuple[str, ...], Tuple[str, str]] = {
         (CWLFilePathInput.__name__,): (
             'File',
@@ -308,14 +308,18 @@ class AnnotatedIPython2CWLToolConverter:
         """
         workdir = tempfile.mkdtemp()
         script_path = os.path.join(workdir, 'notebookTool')
-        cwl_path = os.path.join(workdir, 'tool.cwl')
+        cwl_path: str = os.path.join(workdir, 'tool.cwl')
         dockerfile_path = os.path.join(workdir, 'Dockerfile')
         setup_path = os.path.join(workdir, 'setup.py')
         requirements_path = os.path.join(workdir, 'requirements.txt')
-        with open(script_path, 'wb') as f:
-            f.write(self._wrap_script_to_method(self._tree, self._variables).encode())
-        with open(cwl_path, 'w') as f:
-            yaml.safe_dump(self.cwl_command_line_tool(), f, encoding='utf-8')
+        with open(script_path, 'wb') as script_fd:
+            script_fd.write(self._wrap_script_to_method(self._tree, self._variables).encode())
+        with open(cwl_path, 'w') as cwl_fd:
+            yaml.safe_dump(
+                self.cwl_command_line_tool(),
+                cwl_fd,
+                encoding='utf-8'
+            )
         dockerfile = DOCKERFILE_TEMPLATE.format(
             python_version=f'python:{".".join(platform.python_version_tuple())}'
         )
