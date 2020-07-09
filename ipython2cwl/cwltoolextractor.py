@@ -197,8 +197,7 @@ class AnnotatedIPython2CWLToolConverter:
     with the described inputs & outputs.
     """
 
-    _code: str
-    """The annotated python code to convert."""
+    _code: str  # The annotated python code to convert.
 
     def __init__(self, annotated_ipython_code: str):
         """Creates an AnnotatedIPython2CWLToolConverter. If the annotated_ipython_code contains magic commands use the
@@ -207,7 +206,8 @@ class AnnotatedIPython2CWLToolConverter:
         self._code = annotated_ipython_code
         extractor = AnnotatedVariablesExtractor()
         self._tree = extractor.visit(ast.parse(self._code))
-        [self._tree.body.extend(d) for d in extractor.to_dump]
+        for d in extractor.to_dump:
+            self._tree.body.extend(d)
         self._tree = ast.fix_missing_locations(self._tree)
         self._variables = []
         for variable in extractor.extracted_variables:  # type: _VariableNameTypePair
