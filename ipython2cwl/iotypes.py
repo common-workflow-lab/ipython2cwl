@@ -189,7 +189,7 @@ class CWLPNGPlot(CWLDumpable):
 
 
 class CWLPNGFigure(CWLDumpable):
-    """The same with CWLPNGPlot but creates new figures before plotting. Use that annotation of you don't want
+    """The same with :class:`~ipython2cwl.iotypes.CWLPNGPlot` but creates new figures before plotting. Use that annotation of you don't want
     to write multiple graphs in the same image
 
     >>> import matplotlib.pyplot as plt
