@@ -5,6 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/giannisdoukas/ipython2cwl/badge.svg?branch=master)](https://coveralls.io/github/giannisdoukas/ipython2cwl?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/ipython2cwl/badge/?version=latest)](https://ipython2cwl.readthedocs.io/en/latest/?badge=latest)
 [![Downloads](https://pepy.tech/badge/ipython2cwl/month)](https://pepy.tech/project/ipython2cwl/month)
+[![Join the chat at https://gitter.im/ipython2cwl/community](https://badges.gitter.im/ipython2cwl/community.svg)](https://gitter.im/ipython2cwl/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 IPython2CWL is a tool for converting [IPython](https://ipython.org/) Jupyter Notebooks to
 [CWL (Common Workflow Language)](https://www.commonwl.org/) Command Line Tools by simply providing typing annotation.
