@@ -78,5 +78,3 @@ WHAT IF I WANT TO VALIDATE THAT THE GENERATED SCRIPTS ARE CORRECT?
 All the generated scripts are stored in the docker image under the directory :code:`/app/cwl/bin`. You can see the list
 of the files by running :code:`docker run [IMAGE_ID] find /app/cwl/bin/ -type f`.
 
-
-
