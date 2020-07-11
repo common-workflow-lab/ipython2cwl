@@ -29,7 +29,7 @@ Complex Dumpables Types
 
 Dumpables are variables which are able to be written to a file, but the jupyter notebook developer
 does not want to write it, for example to avoid the IO overhead. To bypass that, you can use
-Dumpables annotation. See :func:`~iotypes.CWLDumpable.dump` for more details.
+Dumpables annotation. See :func:`~ipython2cwl.iotypes.CWLDumpable.dump` for more details.
 
 """
 from typing import Callable
