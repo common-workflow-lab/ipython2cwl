@@ -45,7 +45,7 @@ class CWLFilePathInput(str, _CWLInput):
     will be created and the assignment of value will be generalised.
 
     >>> dataset1: CWLFilePathInput = './data/data.csv'
-    >>> dataset2: CWLFilePathInput = './data/data.csv'
+    >>> dataset2: 'CWLFilePathInput' = './data/data.csv'
 
     """
     pass
@@ -57,7 +57,7 @@ class CWLBooleanInput(_CWLInput):
     will be created and the assignment of value will be generalised.
 
     >>> dataset1: CWLBooleanInput = True
-    >>> dataset2: CWLBooleanInput = False
+    >>> dataset2: 'CWLBooleanInput' = False
 
     """
     pass
@@ -69,7 +69,7 @@ class CWLStringInput(str, _CWLInput):
     will be created and the assignment of value will be generalised.
 
     >>> dataset1: CWLStringInput = 'this is a message input'
-    >>> dataset2: CWLStringInput = 'yet another message input'
+    >>> dataset2: 'CWLStringInput' = 'yet another message input'
 
     """
     pass
@@ -81,7 +81,7 @@ class CWLIntInput(_CWLInput):
     will be created and the assignment of value will be generalised.
 
     >>> dataset1: CWLIntInput = 1
-    >>> dataset2: CWLIntInput = 2
+    >>> dataset2: 'CWLIntInput' = 2
 
     """
     pass

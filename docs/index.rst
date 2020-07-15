@@ -19,12 +19,12 @@ IPython2CWL is a tool for converting `IPython <https://ipython.org/>`_ Jupyter N
 
     from ipython2cwl.iotypes import CWLFilePathInput, CWLFilePathOutput
     import csv
-    input_filename: CWLFilePathInput = 'data.csv'
+    input_filename: 'CWLFilePathInput' = 'data.csv'
     with open(input_filename) as f:
         csv_reader = csv.reader(f)
         data = [line for line in csv_reader]
     number_of_lines = len(data)
-    result_file: CWLFilePathOutput = 'number_of_lines.txt'
+    result_file: 'CWLFilePathOutput' = 'number_of_lines.txt'
     with open(result_file, 'w') as f:
         f.write(str(number_of_lines))
 

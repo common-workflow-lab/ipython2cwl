@@ -14,12 +14,12 @@ IPython2CWL is a tool for converting [IPython](https://ipython.org/) Jupyter Not
 ```python
 from ipython2cwl.iotypes import CWLFilePathInput, CWLFilePathOutput
 import csv
-input_filename: CWLFilePathInput = 'data.csv'
+input_filename: 'CWLFilePathInput' = 'data.csv'
 with open(input_filename) as f:
     csv_reader = csv.reader(f)
     data = [line for line in csv_reader]
 number_of_lines = len(data)
-result_file: CWLFilePathOutput = 'number_of_lines.txt'
+result_file: 'CWLFilePathOutput' = 'number_of_lines.txt'
 with open(result_file, 'w') as f:
     f.write(str(number_of_lines))
 ```
@@ -37,7 +37,7 @@ pip install ipython2cwl
 ```
 
 ### Example
- 
+
 ```
 jupyter repo2cwl https://github.com/giannisdoukas/cwl-annotated-jupyter-notebook.git -o .
 ```
