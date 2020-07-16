@@ -65,13 +65,13 @@ class CWLBooleanInput(_CWLInput):
 
 class CWLStringInput(str, _CWLInput):
     """Use that hint to annotate that a variable is a string input. You can use the typing annotation
-        as a string by importing it. At the generated script a command line argument with the name of the variable
-        will be created and the assignment of value will be generalised.
+    as a string by importing it. At the generated script a command line argument with the name of the variable
+    will be created and the assignment of value will be generalised.
 
-        >>> dataset1: CWLBooleanInput = 'this is a message input'
-        >>> dataset2: 'CWLBooleanInput' = 'yet another message input'
+    >>> dataset1: CWLStringInput = 'this is a message input'
+    >>> dataset2: 'CWLStringInput' = 'yet another message input'
 
-        """
+    """
     pass
 
 
@@ -80,8 +80,8 @@ class CWLIntInput(_CWLInput):
     as a string by importing it. At the generated script a command line argument with the name of the variable
     will be created and the assignment of value will be generalised.
 
-    >>> dataset1: CWLBooleanInput = 1
-    >>> dataset2: 'CWLBooleanInput' = 2
+    >>> dataset1: CWLIntInput = 1
+    >>> dataset2: 'CWLIntInput' = 2
 
     """
     pass
@@ -95,7 +95,7 @@ class CWLFilePathOutput(str, _CWLOutput):
     """Use that hint to annotate that a variable is a string-path to an output file. You can use the typing annotation
     as a string by importing it. The generated file will be mapped as a CWL output.
 
-    >>> filename: CWLBooleanInput = 'data.csv'
+    >>> filename: CWLFilePathOutput = 'data.csv'
 
     """
     pass
@@ -111,7 +111,7 @@ class CWLDumpable(_CWLOutput):
 
         >>> import pandas
         >>> d: CWLDumpable.dump(d.to_csv, "dumpable.csv", sep="\\t", index=False) = pandas.DataFrame(
-        ...     [[1,2,3], [4,5,6], [7,8,9]]
+        ...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         ... )
 
         In that example the converter will add at the end of the script the following line:
@@ -132,13 +132,10 @@ class CWLDumpableFile(CWLDumpable):
 
     >>> data: CWLDumpableFile = "this is text data"
 
-
     the converter will append at the end of the script the following lines:
-
 
     >>> with open('data', 'w') as f:
     ...     f.write(data)
-
 
     and at the CWL, the data, will be mapped as a output.
     """
@@ -165,14 +162,14 @@ class CWLPNGPlot(CWLDumpable):
     be called.
 
     >>> import matplotlib.pyplot as plt
-    >>> data = [1,2,3]
-    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+    >>> data = [1, 2, 3]
+    >>> new_data: CWLPNGPlot = plt.plot(data)
 
     the converter will tranform these lines to
 
     >>> import matplotlib.pyplot as plt
-    >>> data = [1,2,3]
-    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+    >>> data = [1, 2, 3]
+    >>> new_data: CWLPNGPlot = plt.plot(data)
     >>> plt.savefig('new_data.png')
 
 
@@ -181,9 +178,9 @@ class CWLPNGPlot(CWLDumpable):
     To do that in your notebook you have to create a new figure before the plot command or use the CWLPNGFigure.
 
     >>> import matplotlib.pyplot as plt
-    >>> data = [1,2,3]
+    >>> data = [1, 2, 3]
     >>> plt.figure()
-    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+    >>> new_data: CWLPNGPlot = plt.plot(data)
     """
     pass
 
@@ -194,14 +191,13 @@ class CWLPNGFigure(CWLDumpable):
 
     >>> import matplotlib.pyplot as plt
     >>> data = [1,2,3]
-    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+    >>> new_data: CWLPNGFigure = plt.plot(data)
 
     the converter will tranform these lines to
 
     >>> import matplotlib.pyplot as plt
-    >>> data = [1,2,3]
+    >>> data = [1, 2, 3]
     >>> plt.figure()
-    >>> new_data: 'CWLPNGPlot' = plt.plot(data)
+    >>> new_data: CWLPNGFigure = plt.plot(data)
     >>> plt.savefig('new_data.png')
-
     """

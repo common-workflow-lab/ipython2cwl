@@ -21,12 +21,12 @@ IPython2CWL is a tool for converting `IPython <https://ipython.org/>`_ Jupyter N
     import csv
     input_filename: 'CWLFilePathInput' = 'data.csv'
     with open(input_filename) as f:
-      csv_reader = csv.reader(f)
-      data = [line for line in csv_reader]
+        csv_reader = csv.reader(f)
+        data = [line for line in csv_reader]
     number_of_lines = len(data)
     result_file: 'CWLFilePathOutput' = 'number_of_lines.txt'
     with open(result_file, 'w') as f:
-      f.write(str(number_of_lines))
+        f.write(str(number_of_lines))
 
 
 ------------------------------------------------------------------------------------------
@@ -79,4 +79,3 @@ WHAT IF I WANT TO VALIDATE THAT THE GENERATED SCRIPTS ARE CORRECT?
 
 All the generated scripts are stored in the docker image under the directory :code:`/app/cwl/bin`. You can see the list
 of the files by running :code:`docker run [IMAGE_ID] find /app/cwl/bin/ -type f`.
-
