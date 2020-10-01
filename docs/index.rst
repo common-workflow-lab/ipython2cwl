@@ -62,7 +62,7 @@ The basic input data types can be combined with the List and Optional annotation
 annotation:
 
 .. code-block:: python
-
+  from typing import List
   file_inputs: List[CWLFilePathInput] = ['data1.txt', 'data2.txt', 'data3.txt']
   example: Optional[CWLStringInput] = None
 
