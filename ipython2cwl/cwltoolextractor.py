@@ -1,27 +1,15 @@
 import ast
 import os
-import platform
-import shutil
-import tarfile
-import tempfile
 from collections import namedtuple
 from copy import deepcopy
-from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
 import astor  # type: ignore
 import nbconvert  # type: ignore
-import yaml
 from nbformat.notebooknode import NotebookNode  # type: ignore
 
 from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, \
     CWLDumpableFile, CWLDumpableBinaryFile, CWLDumpable, CWLPNGPlot, CWLPNGFigure
-from .requirements_manager import RequirementsManager
-
-with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.dockerfile'])) as f:
-    DOCKERFILE_TEMPLATE = f.read()
-with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.setup'])) as f:
-    SETUP_TEMPLATE = f.read()
 
 _VariableNameTypePair = namedtuple(
     'VariableNameTypePair',
@@ -314,49 +302,3 @@ class AnnotatedIPython2CWLToolConverter:
             },
         }
         return cwl_tool
-
-    def compile(self, filename: Path = Path('notebookAsCWLTool.tar')) -> str:
-        """
-        That method generates a tar file which includes the following files:
-        notebookTool - the python script
-        tool.cwl - the cwl description file
-        Dockerfile - the dockerfile to create the docker image
-        :param: filename
-        :return: The absolute path of the tar file
-        """
-        workdir = tempfile.mkdtemp()
-        script_path = os.path.join(workdir, 'notebookTool')
-        cwl_path: str = os.path.join(workdir, 'tool.cwl')
-        dockerfile_path = os.path.join(workdir, 'Dockerfile')
-        setup_path = os.path.join(workdir, 'setup.py')
-        requirements_path = os.path.join(workdir, 'requirements.txt')
-        with open(script_path, 'wb') as script_fd:
-            script_fd.write(self._wrap_script_to_method(self._tree, self._variables).encode())
-        with open(cwl_path, 'w') as cwl_fd:
-            yaml.safe_dump(
-                self.cwl_command_line_tool(),
-                cwl_fd,
-                encoding='utf-8'
-            )
-        dockerfile = DOCKERFILE_TEMPLATE.format(
-            python_version=f'python:{".".join(platform.python_version_tuple())}'
-        )
-        with open(dockerfile_path, 'w') as f:
-            f.write(dockerfile)
-        with open(setup_path, 'w') as f:
-            f.write(SETUP_TEMPLATE)
-
-        with open(requirements_path, 'w') as f:
-            f.write(os.linesep.join(RequirementsManager.get_all()))
-
-        with tarfile.open(str(filename.absolute()), 'w') as tar_fd:
-            def add_tar(file_to_add): tar_fd.add(file_to_add, arcname=os.path.basename(file_to_add))
-
-            add_tar(script_path)
-            add_tar(cwl_path)
-            add_tar(dockerfile_path)
-            add_tar(setup_path)
-            add_tar(requirements_path)
-
-        shutil.rmtree(workdir)
-        return str(filename.absolute())

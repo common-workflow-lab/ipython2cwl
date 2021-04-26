@@ -1,7 +1,4 @@
 import os
-import tarfile
-import tempfile
-from pathlib import Path
 from unittest import TestCase
 
 import nbformat
@@ -67,28 +64,6 @@ class TestCWLTool(TestCase):
                 'arguments': ['--'],
             },
             cwl_tool
-        )
-
-    def test_AnnotatedIPython2CWLToolConverter_compile(self):
-        annotated_python_script = os.linesep.join([
-            "import csv",
-            "input_filename: CWLFilePathInput = 'data.csv'",
-            "with open(input_filename) as f:",
-            "\tcsv_reader = csv.reader(f)",
-            "\tdata = [line for line in csv_reader]",
-            "print(data)"
-        ])
-        compiled_tar_file = os.path.join(tempfile.mkdtemp(), 'file.tar')
-        extracted_dir = tempfile.mkdtemp()
-        print('compiled at tarfile:',
-              AnnotatedIPython2CWLToolConverter(annotated_python_script)
-              .compile(Path(compiled_tar_file)))
-        with tarfile.open(compiled_tar_file, 'r') as tar:
-            tar.extractall(path=extracted_dir)
-        print(compiled_tar_file)
-        self.assertSetEqual(
-            {'notebookTool', 'tool.cwl', 'Dockerfile', 'requirements.txt', 'setup.py'},
-            set(os.listdir(extracted_dir))
         )
 
     def test_AnnotatedIPython2CWLToolConverter_optional_arguments(self):

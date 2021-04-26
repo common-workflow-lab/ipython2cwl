@@ -25,8 +25,15 @@ def _get_notebook_paths_from_dir(dir_path: str):
     notebooks_paths = []
     for path, _, files in os.walk(dir_path):
         for name in files:
-            if name.endswith('.ipynb'):
-                notebooks_paths.append(os.path.join(path, name))
+            try:
+                if name.endswith('.ipynb'):
+                    fn = os.path.join(path, name)
+                    with open(fn) as fd:
+                        notebook = nbformat.read(fd, as_version=4)
+                        if notebook['metadata']['kernelspec']['language'] == "python":
+                            notebooks_paths.append(fn)
+            except Exception as e:
+                logger.error(f"Failed parse document '{name}' because of exception: {e}")
     return notebooks_paths
 
 
