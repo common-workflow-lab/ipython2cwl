@@ -68,7 +68,7 @@ setup(
         'PyYAML>=5.3.1',
         'gitpython>=3.1.3',
         'jupyter-repo2docker>=0.11.0',
-        'nbconvert==5.6.1',
+        'nbconvert==6.3.0',
         'ipython>=7.15.0'
     ],
     test_suite='tests',
