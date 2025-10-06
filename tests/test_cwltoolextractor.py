@@ -18,7 +18,8 @@ class TestCWLTool(TestCase):
             "import csv",
             "input_filename: CWLFilePathInput = 'data.csv'",
             "flag: CWLBooleanInput = true",
-            "num: CWLIntInput = 1",
+            "num_int: CWLIntInput = 1",
+            "num_float: CWLFloatInput = 1.0",
             "msg: CWLStringInput = 'hello world'",
             "with open(input_filename) as f:",
             "\tcsv_reader = csv.reader(f)",
@@ -50,10 +51,16 @@ class TestCWLTool(TestCase):
                             'prefix': '--flag'
                         }
                     },
-                    'num': {
+                    'num_int': {
                         'type': 'int',
                         'inputBinding': {
-                            'prefix': '--num'
+                            'prefix': '--num_int'
+                        }
+                    },
+                    'num_float': {
+                        'type': 'float',
+                        'inputBinding': {
+                            'prefix': '--num_float'
                         }
                     },
                     'msg': {
