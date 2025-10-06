@@ -14,8 +14,8 @@ import nbconvert  # type: ignore
 import yaml
 from nbformat.notebooknode import NotebookNode  # type: ignore
 
-from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLStringInput, CWLFilePathOutput, \
-    CWLDumpableFile, CWLDumpableBinaryFile, CWLDumpable, CWLPNGPlot, CWLPNGFigure
+from .iotypes import CWLFilePathInput, CWLBooleanInput, CWLIntInput, CWLFloatInput, CWLStringInput, \
+    CWLFilePathOutput, CWLDumpableFile, CWLDumpableBinaryFile, CWLDumpable, CWLPNGPlot, CWLPNGFigure
 from .requirements_manager import RequirementsManager
 
 with open(os.sep.join([os.path.abspath(os.path.dirname(__file__)), 'templates', 'template.dockerfile'])) as f:
@@ -45,6 +45,10 @@ class AnnotatedVariablesExtractor(ast.NodeTransformer):
         (CWLIntInput.__name__,): (
             'int',
             'int',
+        ),
+        (CWLFloatInput.__name__,): (
+            'float',
+            'float',
         ),
         (CWLStringInput.__name__,): (
             'string',
