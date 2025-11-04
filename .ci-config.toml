@@ -1,0 +1,61 @@
+# Configuration for ipython2cwl-gfenoy-new CI/CD
+
+[project]
+name = "ipython2cwl-gfenoy-new"
+version = "0.0.4"
+description = "Enhanced ipython2cwl with advanced CWL features"
+
+[ci]
+# Python versions to test against
+python_versions = ["3.8", "3.9", "3.10", "3.11"]
+
+# Test configuration
+test_directories = [
+    "tests/test_cwltoolextractor.py",
+    "tests/test_requirements_manager.py"
+]
+
+# Docker-dependent tests (may fail in CI)
+docker_tests = [
+    "tests/test_system_tests.py",
+    "tests/test_ipython2cwl_from_repo.py"
+]
+
+# Coverage configuration
+coverage_min = 80
+coverage_exclude = [
+    "*/tests/*",
+    "*/venv/*",
+    "*/__pycache__/*"
+]
+
+[quality]
+# Code style tools
+use_black = true
+use_flake8 = true
+use_isort = true
+use_mypy = false  # Disabled due to type annotation complexities
+
+# Security tools
+use_bandit = true
+use_safety = true
+
+# Quality thresholds
+complexity_max = 10
+line_length = 88
+
+[docker]
+# Docker configuration
+base_image = "python:3.10-slim"
+registry = "ghcr.io"
+platforms = ["linux/amd64"]
+
+[release]
+# Release configuration
+pypi_enabled = true
+test_pypi_enabled = true
+docker_enabled = true
+github_releases = true
+
+# Version bumping
+version_pattern = "semantic"  # major.minor.patch

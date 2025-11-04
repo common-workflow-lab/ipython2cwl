@@ -11,8 +11,11 @@ class TestRequirementsManager(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        venvs_to_delete = [venv for venv in os.listdir(cls.here) if
-                           venv.startswith('venv_') and os.path.isdir(os.sep.join([cls.here, venv]))]
+        venvs_to_delete = [
+            venv
+            for venv in os.listdir(cls.here)
+            if venv.startswith('venv_') and os.path.isdir(os.sep.join([cls.here, venv]))
+        ]
         for venv in venvs_to_delete:
             venv = os.sep.join([cls.here, venv])
             print(f'Deleting venv: {venv}')

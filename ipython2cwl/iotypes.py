@@ -15,9 +15,13 @@ Each variable can be an input or an output. The basic data types are:
 
   * CWLIntInput
 
+  * CWLFloatInput
+
 * Outputs:
 
   * CWLFilePathOutput
+
+  * CWLDirectoryPathOutput
 
   * CWLDumpableFile
 
@@ -32,6 +36,7 @@ does not want to write it, for example to avoid the IO overhead. To bypass that,
 Dumpables annotation. See :func:`~ipython2cwl.iotypes.CWLDumpable.dump` for more details.
 
 """
+
 from typing import Callable
 
 
@@ -48,6 +53,7 @@ class CWLFilePathInput(str, _CWLInput):
     >>> dataset2: 'CWLFilePathInput' = './data/data.csv'
 
     """
+
     pass
 
 
@@ -60,6 +66,7 @@ class CWLBooleanInput(_CWLInput):
     >>> dataset2: 'CWLBooleanInput' = False
 
     """
+
     pass
 
 
@@ -72,6 +79,7 @@ class CWLStringInput(str, _CWLInput):
     >>> dataset2: 'CWLStringInput' = 'yet another message input'
 
     """
+
     pass
 
 
@@ -84,6 +92,20 @@ class CWLIntInput(_CWLInput):
     >>> dataset2: 'CWLIntInput' = 2
 
     """
+
+    pass
+
+
+class CWLFloatInput(_CWLInput):
+    """Use that hint to annotate that a variable is a float input. You can use the typing annotation
+    as a string by importing it. At the generated script a command line argument with the name of the variable
+    will be created and the assignment of value will be generalised.
+
+    >>> dataset1: CWLFloatInput = 1.0
+    >>> dataset2: 'CWLFloatInput' = 2.0
+
+    """
+
     pass
 
 
@@ -98,6 +120,19 @@ class CWLFilePathOutput(str, _CWLOutput):
     >>> filename: CWLFilePathOutput = 'data.csv'
 
     """
+
+    pass
+
+
+class CWLDirectoryPathOutput(str, _CWLOutput):
+    """Use that hint to annotate that a variable is a string-path to an output directory. You can use the typing annotation
+    as a string by importing it. The generated directory will be mapped as a CWL output with type Directory.
+
+    >>> output_dir: CWLDirectoryPathOutput = 'results/'
+    >>> analysis_output: 'CWLDirectoryPathOutput' = './output_folder'
+
+    """
+
     pass
 
 
@@ -139,6 +174,7 @@ class CWLDumpableFile(CWLDumpable):
 
     and at the CWL, the data, will be mapped as a output.
     """
+
     pass
 
 
@@ -154,6 +190,7 @@ class CWLDumpableBinaryFile(CWLDumpable):
 
     and at the CWL, the data, will be mapped as a output.
     """
+
     pass
 
 
@@ -182,6 +219,7 @@ class CWLPNGPlot(CWLDumpable):
     >>> plt.figure()
     >>> new_data: CWLPNGPlot = plt.plot(data)
     """
+
     pass
 
 
@@ -201,3 +239,101 @@ class CWLPNGFigure(CWLDumpable):
     >>> new_data: CWLPNGFigure = plt.plot(data)
     >>> plt.savefig('new_data.png')
     """
+
+    pass
+
+
+class _CWLRequirement:
+    """Base class for CWL requirements annotations."""
+
+    pass
+
+
+class CWLRequirement(dict, _CWLRequirement):
+    """Use this annotation to define CWL requirements directly in your notebook.
+    The variable should be assigned a dictionary that will be merged into the CWL requirements section.
+
+    Example usage:
+
+    >>> # Network access requirement for remote data access
+    >>> cwl_requirements: CWLRequirement = {
+    ...     "NetworkAccess": {"networkAccess": True}
+    ... }
+
+    >>> # Docker requirement with specific image
+    >>> cwl_requirements: CWLRequirement = {
+    ...     "DockerRequirement": {"dockerPull": "osgeo/gdal:latest"}
+    ... }
+    """
+
+    pass
+
+
+class _CWLMetadata:
+    """Base class for CWL schema.org metadata annotations."""
+
+    pass
+
+
+class CWLMetadata(dict, _CWLMetadata):
+    """Use this annotation to define schema.org metadata directly in your notebook.
+    The variable should be assigned a dictionary that will be merged into the CWL metadata section.
+
+    Example usage:
+
+    >>> # Basic software metadata
+    >>> cwl_metadata: CWLMetadata = {
+    ...     "s:softwareVersion": "1.0.0",
+    ...     "s:license": "https://spdx.org/licenses/CC-BY-NC-SA-4.0"
+    ... }
+
+    >>> # Complete metadata with author information
+    >>> cwl_metadata: CWLMetadata = {
+    ...     "s:softwareVersion": "1.0.0",
+    ...     "s:author": [
+    ...         {
+    ...             "class": "s:Person",
+    ...             "s:identifier": "https://orcid.org/0000-0002-9617-8641",
+    ...             "s:email": "gerald.fenoy@geolabs.Fr",
+    ...             "s:name": "Gérald Fenoy"
+    ...         }
+    ...     ],
+    ...     "s:keywords": ["OSPD", "demo", "mangrove", "detection"],
+    ...     "s:codeRepository": "https://github.com/GeoLabs/KindGrove",
+    ...     "s:license": "https://spdx.org/licenses/CC-BY-NC-SA-4.0"
+    ... }
+
+    This will be automatically added to the CWL metadata section during conversion.
+    """
+
+    pass
+
+
+class _CWLNamespaces:
+    """Base class for CWL namespaces annotations."""
+
+    pass
+
+
+class CWLNamespaces(dict, _CWLNamespaces):
+    """Use this annotation to define CWL namespaces directly in your notebook.
+    The variable should be assigned a dictionary that will be merged into the CWL $namespaces section.
+
+    Example usage:
+
+    >>> # Define schema.org namespace (most common)
+    >>> cwl_namespaces: CWLNamespaces = {
+    ...     "s": "https://schema.org/"
+    ... }
+
+    >>> # Define multiple namespaces
+    >>> cwl_namespaces: CWLNamespaces = {
+    ...     "s": "https://schema.org/",
+    ...     "edam": "http://edamontology.org/",
+    ...     "iana": "https://www.iana.org/assignments/media-types/"
+    ... }
+
+    This will be automatically added to the CWL $namespaces section during conversion.
+    """
+
+    pass

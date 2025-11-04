@@ -1,11 +1,61 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
-  - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    assignees:
+      - "gerald-fenoy"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"
+
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday" 
+      time: "09:00"
+    open-pull-requests-limit: 10
+    assignees:
+      - "gerald-fenoy"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"
+    ignore:
+      # Ignore major version updates for these packages (stability)
+      - dependency-name: "jupyter*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "nbconvert"
+        update-types: ["version-update:semver-major"]
+    allow:
+      # Allow all dependency types for security updates
+      - dependency-type: "all"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    assignees:
+      - "gerald-fenoy"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"

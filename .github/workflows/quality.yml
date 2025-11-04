@@ -1,0 +1,178 @@
+name: Security & Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security checks weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+
+    - name: Run Bandit security scan
+      run: |
+        bandit -r ipython2cwl/ -f json -o bandit-report.json || true
+        bandit -r ipython2cwl/ || echo "Bandit found security issues"
+
+    - name: Run Safety check
+      run: |
+        safety check --save-json safety-report.json || true
+        safety check || echo "Safety found vulnerable dependencies"
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: python
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install quality tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint mypy radon
+
+    - name: Install package dependencies
+      run: |
+        pip install numpy pandas matplotlib jupyter nbconvert ipython
+        pip install astor gitpython jupyter-repo2docker
+        pip install -e .
+
+    - name: Run Pylint
+      run: |
+        pylint ipython2cwl/ --output-format=json --reports=yes > pylint-report.json || true
+        pylint ipython2cwl/ || echo "Pylint found issues"
+
+    - name: Run MyPy type checking
+      run: |
+        mypy ipython2cwl/ --ignore-missing-imports --txt-report mypy-report --html-report mypy-report-html || echo "MyPy found type issues"
+        mypy ipython2cwl/ --ignore-missing-imports || echo "MyPy found type issues"
+
+    - name: Calculate code complexity
+      run: |
+        radon cc ipython2cwl/ --json > complexity-report.json || true
+        radon cc ipython2cwl/ || echo "Complexity analysis completed"
+
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: quality-reports
+        path: |
+          pylint-report.json
+          mypy-report/
+          mypy-report-html/
+          complexity-report.json
+
+  documentation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install documentation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx sphinx-rtd-theme pydoc-markdown
+
+    - name: Check documentation coverage
+      run: |
+        # Generate documentation coverage report
+        python -c "
+        import ast
+        import os
+        
+        def check_docstrings(filepath):
+            with open(filepath, 'r') as f:
+                tree = ast.parse(f.read())
+            
+            functions = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
+            classes = [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+            
+            documented = 0
+            total = len(functions) + len(classes)
+            
+            for item in functions + classes:
+                if ast.get_docstring(item):
+                    documented += 1
+            
+            return documented, total
+        
+        total_documented = 0
+        total_items = 0
+        
+        for root, dirs, files in os.walk('ipython2cwl'):
+            for file in files:
+                if file.endswith('.py'):
+                    filepath = os.path.join(root, file)
+                    doc, tot = check_docstrings(filepath)
+                    total_documented += doc
+                    total_items += tot
+                    print(f'{filepath}: {doc}/{tot} documented')
+        
+        coverage = (total_documented / total_items * 100) if total_items > 0 else 0
+        print(f'Overall documentation coverage: {coverage:.1f}% ({total_documented}/{total_items})')
+        "
+
+    - name: Generate API documentation
+      run: |
+        mkdir -p docs/api
+        pydoc-markdown --render-toc > docs/api/README.md || echo "API documentation generation completed"
