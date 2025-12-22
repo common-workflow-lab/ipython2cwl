@@ -18,7 +18,7 @@ install:
 script:
   - pycodestyle --max-line-length=119 $(find ipython2cwl -name '*.py')
   - coverage run --source ipython2cwl -m unittest discover tests
-  - coveralls
+  - coveralls || true
   - make mypy
 matrix:
   include:
